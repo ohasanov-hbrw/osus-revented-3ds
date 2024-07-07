@@ -2419,7 +2419,9 @@ int * GameManager::sliderPreInit(HitObjectData data){
     }
 
 	std::vector<Vector2> edgePoints;
-	std::vector<Vector2> renderPoints;
+	//std::vector<Vector2> renderPoints;
+	Vector2* renderPoints;
+	int renderPointsSize = 0;
     edgePoints.push_back(Vector2{(float)data.x, (float)data.y});
 
     float resolution = data.length;
@@ -2430,10 +2432,12 @@ int * GameManager::sliderPreInit(HitObjectData data){
 
     for(size_t i = 0; i < data.curvePoints.size(); i++)
         edgePoints.push_back(Vector2{(float)data.curvePoints[i].first, (float)data.curvePoints[i].second});
-
+	
     if(edgePoints.size() == 1){
+		renderPoints = (Vector2*)malloc(sizeof(Vector2) * data.length);
+		renderPointsSize = data.length;
         for(int k = 0; k < data.length; k++){
-            renderPoints.push_back(edgePoints[0]);
+            renderPoints[k] = (edgePoints[0]);
         }
     }
     else{
@@ -2444,15 +2448,25 @@ int * GameManager::sliderPreInit(HitObjectData data){
             data.lengths[data.lengths.size()-1] = std::sqrt(std::pow(std::abs(edgePoints[edgePoints.size()-2].x - edgePoints[edgePoints.size()-1].x),2)+std::pow(std::abs(edgePoints[edgePoints.size()-2].y - edgePoints[edgePoints.size()-1].y),2));
             data.totalLength+=data.lengths[data.lengths.size()-1];
             lengthScale = data.totalLength/data.length;
-            for(size_t i = 0; i < edgePoints.size()-1; i++)
-                for(float j = 0; j < data.lengths[i]; j += lengthScale)
-                    renderPoints.push_back(Vector2{edgePoints[i].x + (edgePoints[i+1].x - edgePoints[i].x)*j/data.lengths[i], edgePoints[i].y + (edgePoints[i+1].y - edgePoints[i].y)*j/data.lengths[i]});
-            renderPoints.push_back(edgePoints[edgePoints.size()-1]);
-            while(!false){
-                if(renderPoints.size() <= data.length)
-                    break;
-                renderPoints.pop_back();
-            }
+
+			renderPoints = (Vector2*)malloc(sizeof(Vector2) * (data.length));
+			renderPointsSize = data.length;
+			int ending = 0;
+            for(size_t i = 0; i < edgePoints.size()-1; i++){
+                for(float j = 0; j < data.lengths[i] && j < renderPointsSize; j += lengthScale){
+                    renderPoints[ending] = (Vector2{edgePoints[i].x + (edgePoints[i+1].x - edgePoints[i].x)*j/data.lengths[i], edgePoints[i].y + (edgePoints[i+1].y - edgePoints[i].y)*j/data.lengths[i]});
+					ending++;
+					if(ending >= renderPointsSize)
+						break;
+				}
+				if(ending >= renderPointsSize)
+					break;
+			}
+			while(ending < renderPointsSize){
+				renderPoints[ending] = renderPoints[ending - 1];
+				ending++;
+			}
+            
         }
         else if(data.curveType == 'B'){
 			Vector2 edges[edgePoints.size()];
@@ -2521,7 +2535,9 @@ int * GameManager::sliderPreInit(HitObjectData data){
 				samples.push_back(extraPosition);
 				lengths.push_back(distance(samples[samples.size() - 1], samples[samples.size() - 2]) + lengths[lengths.size() - 1]);
 			}
-			renderPoints.clear();
+			renderPoints = (Vector2*)malloc(sizeof(Vector2) * (data.length));
+			renderPointsSize = data.length;
+			int ending = 0;
 			int SampleIndex = 1;
 			for(int index = 0; index <= data.length; index++){
 				while(index > lengths[SampleIndex]){
@@ -2532,7 +2548,11 @@ int * GameManager::sliderPreInit(HitObjectData data){
 					}
 				}
 				double lerpPos = (index - lengths[SampleIndex - 1]) / (lengths[SampleIndex] - lengths[SampleIndex - 1]);
-				renderPoints.push_back(lerp(samples[SampleIndex], samples[SampleIndex - 1], lerpPos));
+				renderPoints[ending] = (lerp(samples[SampleIndex], samples[SampleIndex - 1], lerpPos));
+				ending++;
+				if(ending >= renderPointsSize){
+					break;
+				}
 			}
         }
         else if(data.curveType == 'P'){
@@ -2546,15 +2566,23 @@ int * GameManager::sliderPreInit(HitObjectData data){
                 data.totalLength+=data.lengths[data.lengths.size()-1];
 
                 lengthScale = data.totalLength/data.length;
-
-                for(size_t i = 0; i < edgePoints.size()-1; i++)
-                    for(float j = 0; j < data.lengths[i]; j += lengthScale)
-                        renderPoints.push_back(Vector2{edgePoints[i].x + (edgePoints[i+1].x - edgePoints[i].x)*j/data.lengths[i], edgePoints[i].y + (edgePoints[i+1].y - edgePoints[i].y)*j/data.lengths[i]});
-                renderPoints.push_back(edgePoints[edgePoints.size()-1]);
-                while(!false){
-                    if(renderPoints.size() <= data.length) break;
-                    renderPoints.pop_back();
-                }
+				renderPoints = (Vector2*)malloc(sizeof(Vector2) * (data.length));
+				renderPointsSize = data.length;
+				int ending = 0;
+				for(size_t i = 0; i < edgePoints.size()-1; i++){
+					for(float j = 0; j < data.lengths[i] && j < renderPointsSize; j += lengthScale){
+						renderPoints[ending] = (Vector2{edgePoints[i].x + (edgePoints[i+1].x - edgePoints[i].x)*j/data.lengths[i], edgePoints[i].y + (edgePoints[i+1].y - edgePoints[i].y)*j/data.lengths[i]});
+						ending++;
+						if(ending >= renderPointsSize)
+							break;
+					}
+					if(ending >= renderPointsSize)
+						break;
+				}
+				while(ending < renderPointsSize){
+					renderPoints[ending] = (edgePoints[edgePoints.size()-1]);
+					ending++;
+				}
             }
             else{
                 Vector2 center = circleData.first;
@@ -2567,55 +2595,66 @@ int * GameManager::sliderPreInit(HitObjectData data){
                 degree3 = degree3 < 0 ? degree3 + 360 : degree3;
                 bool clockwise = !orientation2(edgePoints[0], edgePoints[1], edgePoints[2]);
                 float angle = (((data.length * 360) / radius ) / 3.14159265 ) / 2;
-                int a = 0;
+				lengthScale = data.totalLength/data.length;
+
+				renderPoints = (Vector2*)malloc(sizeof(Vector2) * (data.length));
+				renderPointsSize = data.length;
+				int ending = 0;
                 if(clockwise){
                     degree1 = degree1 < degree3 ? degree1 + 360 : degree1;
                     degree2 = degree2 < degree3 ? degree2 + 360 : degree2;
                     for(float i = degree1; i > degree1 - angle; i-=angle/data.length){
-                        if(a > data.length){
-                            renderPoints.pop_back();
+                        if(ending >= data.length){
                             break;
                         }
                         Vector2 tempPoint = Vector2{center.x + cos(i / RAD2DEG) * radius, center.y + sin(i / RAD2DEG) * radius};
-                        renderPoints.push_back(tempPoint);
-                        a++;
+                        renderPoints[ending] = (tempPoint);
+                        ending++;
                     }
                 }
                 else{
                     degree2 = degree2 < degree1 ? degree2 + 360 : degree2;
                     degree3 = degree3 < degree1 ? degree3 + 360 : degree3;
                     for(float i = degree1; i < degree1 + angle; i+=angle/data.length){
-                        if(a > data.length){
-                            renderPoints.pop_back();
+                        if(ending >= data.length){
                             break;
                         }
                         Vector2 tempPoint = Vector2{center.x + cos(i / RAD2DEG) * radius, center.y + sin(i / RAD2DEG) * radius};
-                        renderPoints.push_back(tempPoint);
-                        a++;
+                        renderPoints[ending] = (tempPoint);
+                        ending++;
                     }
                     //std::reverse(renderPoints.begin(), renderPoints.end());
                 }
-                while(renderPoints.size() > data.length){
-                    renderPoints.pop_back();
-                }
+				while(ending < renderPointsSize){
+					renderPoints[ending] = renderPoints[ending - 1];
+					ending++;
+				}
                 //std::cout << "Pdata: " << data.length << " size: " << renderPoints.size() << std::endl;
                 
             }
             
         }
         else if(data.curveType == 'C'){
-            renderPoints = interpolate2(edgePoints, data.length);
-            while(!false){
-                if(renderPoints.size() <= data.length) break;
-                renderPoints.pop_back();
-            }
+			std::vector<Vector2> amogus = interpolate2(edgePoints, data.length);
+            renderPoints = (Vector2*)malloc(sizeof(Vector2) * (data.length));
+			renderPointsSize = data.length;
+			int ending = 0;
+			for(int i = 0; i < renderPointsSize && i < amogus.size(); i++){
+				renderPoints[i] = amogus[i];
+				ending++;
+			}
+			while(ending < renderPointsSize){
+				renderPoints[ending] = renderPoints[ending - 1];
+				ending++;
+			}
+			amogus.clear();
         }
         else{
             std::__throw_invalid_argument("Invalid Slider type!");
         }
 
     }
-    for(size_t i = 0; i < renderPoints.size(); i++){
+    for(size_t i = 0; i < renderPointsSize; i++){
         if(renderPoints[i].x < -150){
             renderPoints[i].x = -150;
         }
@@ -2630,13 +2669,13 @@ int * GameManager::sliderPreInit(HitObjectData data){
         }
     }
 
-    if(data.slides % 2 == 0){
+    if(data.slides % 2 == 0 || renderPointsSize < 1){
         data.ex = data.x;
         data.ey = data.y;
     }
     else{
-        data.ex = renderPoints[renderPoints.size() - 1].x;
-        data.ey = renderPoints[renderPoints.size() - 1].y;
+        data.ex = renderPoints[renderPointsSize - 1].x;
+        data.ey = renderPoints[renderPointsSize - 1].y;
     }
 
 	float tempTimeLength = (data.length/100) * (data.timing.beatLength) / (sliderSpeed * data.timing.sliderSpeedOverride) * data.slides;
@@ -2648,7 +2687,9 @@ int * GameManager::sliderPreInit(HitObjectData data){
 	//std::vector<int> out;
 	int *out = (int*)malloc(sizeof(int) * 3);
 	edgePoints.clear();
-	renderPoints.clear();
+	//renderPoints.clear();
+	free(renderPoints);
+
 
 	//out.push_back(data.ex);
 	//out.push_back(data.ey);

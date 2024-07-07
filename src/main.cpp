@@ -23,6 +23,7 @@
 #include <assert.h>
 #include "time_util.hpp"
 #include <queue>
+#include "settingsParser.hpp"
 //#include "SDLutils.hpp"
 
 
@@ -64,7 +65,8 @@ void RenderLoop(void *){
 
     std::cout << "C2D INIT\n";
     
-    
+    std::cout << "parsing the settings.ini file...\n";
+    parseSettings();
     
     InitAudioDevice();
     
@@ -318,11 +320,11 @@ int main(){
         //LightLock_Unlock(&Global.lightlock);
 
         std::chrono::duration<double, std::milli> sleepTime {std::chrono::steady_clock::now() - t1};
-        unsigned int sleepTimeInt = (unsigned int)(std::max(0.0, (1000.0/250.0) - sleepTime.count()) * 980.0);
+        unsigned int sleepTimeInt = (unsigned int)(std::max(0.0, (1000.0/(float)(Global.TPS)) - sleepTime.count()) * 980.0);
         if(!dumbsleep)
             SleepInUs(sleepTimeInt);
         
-        while(getTimer() - timerXXX < 1000.0/250.0 and getTimer() - timerXXX >= 0)
+        while(getTimer() - timerXXX < 1000.0/(float)(Global.TPS) and getTimer() - timerXXX >= 0)
             continue;
         
         std::chrono::duration<double, std::milli> elapsed {std::chrono::steady_clock::now() - t1};

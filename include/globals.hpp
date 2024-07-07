@@ -59,6 +59,7 @@ struct Globals {
     //Color Background = {42,22,33,255};
     int skinNumberOverlap = 18;
     double FPS = 4.0f * 100.0f;
+    int TPS = 240;
     int Width = 400;
     int Height = 240;
     float offset = 45.0f;
@@ -134,8 +135,8 @@ struct Globals {
     Globals() = default;
 
     float sliderTexSize = 0.6f;
-    int circleSector = 8;
-    static const bool legacyRender = true;
+    int circleSector = 16;
+    bool legacyRender = true;
 
     long long errorSum = 0;
     long long errorLast = 0;
