@@ -44,7 +44,7 @@ Vector2 GetRaylibOrigin(Rectangle);
 Rectangle GetRaylibOriginR(Rectangle);
 
 //Draw a centered and scaled Texture
-void DrawTextureCenter(Texture2D, float, float, float, Color);
+void DrawTextureCenter(Texture2D*, float, float, float, Color);
 //Draw centered and scaled combo numbers
 void DrawCNumbersCenter(int, float, float, float, Color);
 //lmao
@@ -53,15 +53,15 @@ void DrawTextLeft(const char *, float, float, float, Color);
 //Draw scaled combo numbers from left to right
 void DrawCNumbersLeft(int, float, float, float, Color);
 //Draw a centered, scaled and rotated Texture
-void DrawTextureRotate(Texture2D, float, float, float, float, Color);
+//void DrawTextureRotate(Texture2D, float, float, float, float, Color);
 //max trigo
-void DrawTextureOnCircle(Texture2D, float, float, float, float, float, float, Color);
+void DrawTextureOnCircle(Texture2D*, float, float, float, float, float, float, Color);
 //Draw a slider texture (exclusively for a slider object)
-void DrawTextureSlider(Texture2D, float, float, Color, float);
+void DrawTextureSlider(Texture2D*, float, float, Color, float);
 
-void DrawSpinnerMeter(Texture2D, float);
+void DrawSpinnerMeter(Texture2D*, float);
 
-void DrawSpinnerBack(Texture2D, Color);
+void DrawSpinnerBack(Texture2D*, Color);
 
 //Clip a number between two other numbers
 float clip( float, float, float);
@@ -109,9 +109,15 @@ double getTimer();
 void addOffsetTimer(unsigned long long int);
 void updateTimer();
 
-bool IsTextureReady(Texture2D);
-bool IsRenderTextureReady(RenderTexture2D);
+bool IsTextureReady(Texture2D*);
+bool IsRenderTextureReady(RenderTexture2D*);
 
 float getAngle(Vector2, Vector2);
 
 std::vector<std::string> getAudioFilenames(int , int , int , int , int , int , int , std::string);
+
+unsigned char *LoadFileData(const char *fileName, int *dataSize);
+void UnloadFileData(unsigned char *data);
+bool TextIsEqual(const char *text1, const char *text2);
+const char *GetFileExtension(const char *fileName);
+bool IsFileExtension(const char *fileName, const char *ext);

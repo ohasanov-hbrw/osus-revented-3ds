@@ -13,6 +13,9 @@
 #include "fs.hpp"
 #include <sys/time.h>
 #include "followpoint.hpp"
+#include "time_util.hpp"
+
+#include "linkedListImpl.hpp"
 
 //for some reason the clamp function didnt work so here is a manual one
 float GameManager::clip(float value, float min, float max){
@@ -44,7 +47,7 @@ void GameManager::update(){
 	//for now the left key on the keyboard plays the map automatically
 	//this is pretty useful when you need to quickly test the timings
 	//since the bot is always pressing in the correct time window
-	if(IsKeyDown(SDL_SCANCODE_LEFT)){
+	if(IsKeyDown(SDLK_x)){
 		Global.useAuto = true;
 	}
 	else{
@@ -158,13 +161,13 @@ void GameManager::update(){
 	
 
 	//spawn the hitobjects when their time comes
-	int size = gameFile.hitObjects.size();	
+	/*int size = gameFile.hitObjects.size();	
 	for(int i = size-1; i >= 0; i--){
 		if(gameFile.hitObjects[i].time - gameFile.preempt <= currentTime*1000.0f){
-			/*if(gameFile.hitObjects[i].type == 2 and gameFile.hitObjects[i].totalLength > Global.maxSliderSize){
-				std::cout << "well fuck this long slider i guess. \n";
-				gameFile.hitObjects.pop_back();
-			}*/
+			//if(gameFile.hitObjects[i].type == 2 and gameFile.hitObjects[i].totalLength > Global.maxSliderSize){
+			//	std::cout << "well fuck this long slider i guess. \n";
+			//	gameFile.hitObjects.pop_back();
+			//}
 			//else{
 				spawnHitObject(gameFile.hitObjects[i]);
 				if(objects[objects.size()-1]->data.startingACombo){
@@ -196,17 +199,16 @@ void GameManager::update(){
 				objects[objects.size()-1]->data.textureReady = false;
 				objects[objects.size()-1]->data.textureLoaded = false;
 				objects[objects.size()-1]->data.timing.renderTicks = timingSettingsForHitObject[index].renderTicks;
-				/*std::cout << "Time:" << timingSettingsForHitObject[index].time << " Beat:" << objects[objects.size()-1]->data.timing.beatLength <<
-				" Meter:" << objects[objects.size()-1]->data.timing.meter << " SV:" << objects[objects.size()-1]->data.timing.sliderSpeedOverride <<
-				" SS:" << sliderSpeed << " RT:" << objects[objects.size()-1]->data.timing.renderTicks;*/
-
+				//std::cout << "Time:" << timingSettingsForHitObject[index].time << " Beat:" << objects[objects.size()-1]->data.timing.beatLength <<
+				//" Meter:" << objects[objects.size()-1]->data.timing.meter << " SV:" << objects[objects.size()-1]->data.timing.sliderSpeedOverride <<
+				//" SS:" << sliderSpeed << " RT:" << objects[objects.size()-1]->data.timing.renderTicks;
 				
 
 				objects[objects.size()-1]->init();
-				/*Vector2 templastCords = {objects[objects.size()-1]->data.ex, objects[objects.size()-1]->data.ey};
-				objects[objects.size()-1]->data.ex = lastCords.x;
-				objects[objects.size()-1]->data.ey = lastCords.y;
-				objects[objects.size()-1]->data.lastTime = lastHitTime;*/
+				//Vector2 templastCords = {objects[objects.size()-1]->data.ex, objects[objects.size()-1]->data.ey};
+				//objects[objects.size()-1]->data.ex = lastCords.x;
+				//objects[objects.size()-1]->data.ey = lastCords.y;
+				//objects[objects.size()-1]->data.lastTime = lastHitTime;
 				lastHitTime = objects[objects.size()-1]->data.time;
 				if(objects[objects.size()-1]->data.type == 2){
 					objects[objects.size()-1]->data.time + (objects[objects.size()-1]->data.length/100) * (objects[objects.size()-1]->data.timing.beatLength) / (sliderSpeed * objects[objects.size()-1]->data.timing.sliderSpeedOverride) * objects[objects.size()-1]->data.slides;
@@ -225,8 +227,64 @@ void GameManager::update(){
 		else
 			break;
 	}
+	*/
+
+	int size = gameFile.hitObjects.size();	
+	for(int i = size-1; i >= 0; i--){
+		if(gameFile.hitObjects[i].time - gameFile.preempt <= currentTime*1000.0f){
+
+			spawnHitObject(gameFile.hitObjects[i]);
+
+			Node* hitObjectNode = objectsLinkedList.getTail();
+			HitObject* hitObject = (HitObject*)hitObjectNode->object;
+
+			if(hitObject->data.startingACombo){
+				currentComboIndex++;
+				if(gameFile.comboColours.size())
+					currentComboIndex = (currentComboIndex + hitObject->data.skipComboColours) % gameFile.comboColours.size();
+				combo = 1;
+			}
+			if(gameFile.comboColours.size())
+				hitObject->data.colour = gameFile.comboColours[currentComboIndex];
+			hitObject->data.comboNumber = combo;
+			combo++;
+
+			int index = 0;
+			for(int amog = 0; amog < timingSettingsForHitObject.size(); amog++){
+				if(timingSettingsForHitObject[amog].time > gameFile.hitObjects[i].time)
+					break;
+				index = amog;
+			}
+
+			hitObject->data.timing.beatLength = timingSettingsForHitObject[index].beatLength;
+			hitObject->data.timing.meter = timingSettingsForHitObject[index].meter;
+			hitObject->data.timing.sampleSet = timingSettingsForHitObject[index].sampleSet;
+			hitObject->data.timing.sampleIndex = timingSettingsForHitObject[index].sampleIndex;
+			hitObject->data.timing.volume = timingSettingsForHitObject[index].volume;
+			hitObject->data.timing.uninherited = timingSettingsForHitObject[index].uninherited;
+			hitObject->data.timing.effects = timingSettingsForHitObject[index].effects;
+			hitObject->data.timing.sliderSpeedOverride = timingSettingsForHitObject[index].sliderSpeedOverride;
+			hitObject->data.index = 0;
+			hitObject->data.textureReady = false;
+			hitObject->data.textureLoaded = false;
+			hitObject->data.timing.renderTicks = timingSettingsForHitObject[index].renderTicks;
+
+			hitObject->init();
+			lastHitTime = hitObject->data.time;
+			if(hitObject->data.type == 2){
+				hitObject->data.time + (hitObject->data.length/100) * (hitObject->data.timing.beatLength) / (sliderSpeed * hitObject->data.timing.sliderSpeedOverride) * hitObject->data.slides;
+			}
+			gameFile.hitObjects.pop_back();
+			spawnedHitObjects++;
+			for(int amog = 0; amog < index - 1; amog++){
+				timingSettingsForHitObject.erase(timingSettingsForHitObject.begin());
+			}
+			//std::cout << "spawned\n";
+		}
+	}
+
 	//update and check collision for every hit circle
-	int newSize = objects.size();
+	/*int newSize = objects.size();
 	int oldSize = objects.size();
 	int susSize = objects.size();
 	bool stop = true;
@@ -236,7 +294,7 @@ void GameManager::update(){
 	for(int i = 0; i < objects.size(); i++){
 		//if((std::abs(currentTime*1000 - objects[i]->data.time) <= gameFile.p50Final)){
 		
-		if(IsKeyPressed(SDL_SCANCODE_LEFT)){
+		if(IsKeyPressed(SDLK_x)){
 			Global.AutoMouseStartTime = currentTime*1000.0f;
 			Global.AutoMousePositionStart = {320, 240};
 		}
@@ -251,8 +309,8 @@ void GameManager::update(){
 					if(std::abs(currentTime*1000.0f - objects[i]->data.time) > gameFile.p50Final + Global.extraJudgementTime/2.0f){
 						objects[i]->data.point = 0;
 						if(clickCombo > 30){
-							SetSoundVolume(SoundFilesAll.data["combobreak"], 1.0f);
-							PlaySound(SoundFilesAll.data["combobreak"]);
+							SetSoundVolume(&SoundFilesAll.data["combobreak"], 1.0f);
+							PlaySound(&SoundFilesAll.data["combobreak"]);
 						}
 						clickCombo = 0;
 						Global.Key1P = false;
@@ -300,15 +358,15 @@ void GameManager::update(){
 
 					for(int soundIndex = 0; soundIndex < sounds.size(); soundIndex+=2){
 						if(SoundFilesAll.data.count(sounds[soundIndex]) == 1 and SoundFilesAll.loaded[sounds[soundIndex]].value){
-							SetSoundPan(SoundFilesAll.data[sounds[soundIndex]], 1-clip(objects[i]->data.x / 640.0, 0, 1));
-							SetSoundVolume(SoundFilesAll.data[sounds[soundIndex]], Global.hitVolume * ((float)volume/100.0f));
-							PlaySound(SoundFilesAll.data[sounds[soundIndex]]);
+							SetSoundPan(&SoundFilesAll.data[sounds[soundIndex]], 1-clip(objects[i]->data.x / 640.0, 0, 1));
+							SetSoundVolume(&SoundFilesAll.data[sounds[soundIndex]], Global.hitVolume * ((float)volume/100.0f));
+							PlaySound(&SoundFilesAll.data[sounds[soundIndex]]);
 							//std::cout << sounds[0] << " played \n";
 						}
 						else if(SoundFilesAll.data.count(sounds[soundIndex+1]) == 1 and SoundFilesAll.loaded[sounds[soundIndex+1]].value){
-							SetSoundPan(SoundFilesAll.data[sounds[soundIndex+1]], 1-clip(objects[i]->data.x / 640.0, 0, 1));
-							SetSoundVolume(SoundFilesAll.data[sounds[soundIndex+1]], Global.hitVolume * ((float)volume/100.0f));
-							PlaySound(SoundFilesAll.data[sounds[soundIndex+1]]);
+							SetSoundPan(&SoundFilesAll.data[sounds[soundIndex+1]], 1-clip(objects[i]->data.x / 640.0, 0, 1));
+							SetSoundVolume(&SoundFilesAll.data[sounds[soundIndex+1]], Global.hitVolume * ((float)volume/100.0f));
+							PlaySound(&SoundFilesAll.data[sounds[soundIndex+1]]);
 							//std::cout << sounds[1] << " played \n";
 						}
 					}
@@ -340,8 +398,8 @@ void GameManager::update(){
 							stop = false;
 							tempslider->earlyhit = true;
 							if(clickCombo > 30){
-								SetSoundVolume(SoundFilesAll.data["combobreak"], 1.0f);
-								PlaySound(SoundFilesAll.data["combobreak"]);
+								SetSoundVolume(&SoundFilesAll.data["combobreak"], 1.0f);
+								PlaySound(&SoundFilesAll.data["combobreak"]);
 							}
 							clickCombo = 0;
 							Global.Key1P = false;
@@ -365,15 +423,15 @@ void GameManager::update(){
 
 						for(int soundIndex = 0; soundIndex < sounds.size(); soundIndex+=2){
 							if(SoundFilesAll.data.count(sounds[soundIndex]) == 1 and SoundFilesAll.loaded[sounds[soundIndex]].value){
-								SetSoundPan(SoundFilesAll.data[sounds[soundIndex]], 1-clip(objects[i]->data.x / 640.0, 0, 1));
-								SetSoundVolume(SoundFilesAll.data[sounds[soundIndex]], Global.hitVolume * ((float)volume/100.0f) );
-								PlaySound(SoundFilesAll.data[sounds[soundIndex]]);
+								SetSoundPan(&SoundFilesAll.data[sounds[soundIndex]], 1-clip(objects[i]->data.x / 640.0, 0, 1));
+								SetSoundVolume(&SoundFilesAll.data[sounds[soundIndex]], Global.hitVolume * ((float)volume/100.0f) );
+								PlaySound(&SoundFilesAll.data[sounds[soundIndex]]);
 								//std::cout << sounds[0] << " played \n";
 							}
 							else if(SoundFilesAll.data.count(sounds[soundIndex+1]) == 1 and SoundFilesAll.loaded[sounds[soundIndex+1]].value){
-								SetSoundPan(SoundFilesAll.data[sounds[soundIndex+1]], 1-clip(objects[i]->data.x / 640.0, 0, 1));
-								SetSoundVolume(SoundFilesAll.data[sounds[soundIndex+1]], Global.hitVolume * ((float)volume/100.0f));
-								PlaySound(SoundFilesAll.data[sounds[soundIndex+1]]);
+								SetSoundPan(&SoundFilesAll.data[sounds[soundIndex+1]], 1-clip(objects[i]->data.x / 640.0, 0, 1));
+								SetSoundVolume(&SoundFilesAll.data[sounds[soundIndex+1]], Global.hitVolume * ((float)volume/100.0f));
+								PlaySound(&SoundFilesAll.data[sounds[soundIndex+1]]);
 								//std::cout << sounds[1] << " played \n";
 							}
 						}
@@ -402,7 +460,7 @@ void GameManager::update(){
 			Global.Key2P = false;
 		}
 		else{
-			bool debugf = IsKeyDown(SDL_SCANCODE_LEFT);
+			bool debugf = IsKeyDown(SDLK_x);
 			if(debugf){
 				//std::cout << "updating object on time: " << objects[i]->data.time << std::endl;
 				
@@ -430,15 +488,15 @@ void GameManager::update(){
 
 							for(int soundIndex = 0; soundIndex < sounds.size(); soundIndex+=2){
 								if(SoundFilesAll.data.count(sounds[soundIndex]) == 1 and SoundFilesAll.loaded[sounds[soundIndex]].value){
-									SetSoundPan(SoundFilesAll.data[sounds[soundIndex]], 1-clip(objects[i]->data.x / 640.0, 0, 1));
-									SetSoundVolume(SoundFilesAll.data[sounds[soundIndex]], Global.hitVolume * ((float)volume/100.0f));
-									PlaySound(SoundFilesAll.data[sounds[soundIndex]]);
+									SetSoundPan(&SoundFilesAll.data[sounds[soundIndex]], 1-clip(objects[i]->data.x / 640.0, 0, 1));
+									SetSoundVolume(&SoundFilesAll.data[sounds[soundIndex]], Global.hitVolume * ((float)volume/100.0f));
+									PlaySound(&SoundFilesAll.data[sounds[soundIndex]]);
 									//std::cout << sounds[0] << " played \n";
 								}
 								else if(SoundFilesAll.data.count(sounds[soundIndex+1]) == 1 and SoundFilesAll.loaded[sounds[soundIndex+1]].value){
-									SetSoundPan(SoundFilesAll.data[sounds[soundIndex+1]], 1-clip(objects[i]->data.x / 640.0, 0, 1));
-									SetSoundVolume(SoundFilesAll.data[sounds[soundIndex+1]], Global.hitVolume * ((float)volume/100.0f));
-									PlaySound(SoundFilesAll.data[sounds[soundIndex+1]]);
+									SetSoundPan(&SoundFilesAll.data[sounds[soundIndex+1]], 1-clip(objects[i]->data.x / 640.0, 0, 1));
+									SetSoundVolume(&SoundFilesAll.data[sounds[soundIndex+1]], Global.hitVolume * ((float)volume/100.0f));
+									PlaySound(&SoundFilesAll.data[sounds[soundIndex+1]]);
 									//std::cout << sounds[1] << " played \n";
 								}
 							}
@@ -474,15 +532,15 @@ void GameManager::update(){
 
 							for(int soundIndex = 0; soundIndex < sounds.size(); soundIndex+=2){
 								if(SoundFilesAll.data.count(sounds[soundIndex]) == 1 and SoundFilesAll.loaded[sounds[soundIndex]].value){
-									SetSoundPan(SoundFilesAll.data[sounds[soundIndex]], 1-clip(objects[i]->data.x / 640.0, 0, 1));
-									SetSoundVolume(SoundFilesAll.data[sounds[soundIndex]], Global.hitVolume * ((float)volume/100.0f));
-									PlaySound(SoundFilesAll.data[sounds[soundIndex]]);
+									SetSoundPan(&SoundFilesAll.data[sounds[soundIndex]], 1-clip(objects[i]->data.x / 640.0, 0, 1));
+									SetSoundVolume(&SoundFilesAll.data[sounds[soundIndex]], Global.hitVolume * ((float)volume/100.0f));
+									PlaySound(&SoundFilesAll.data[sounds[soundIndex]]);
 									//std::cout << sounds[0] << " played \n";
 								}
 								else if(SoundFilesAll.data.count(sounds[soundIndex+1]) == 1 and SoundFilesAll.loaded[sounds[soundIndex+1]].value){
-									SetSoundPan(SoundFilesAll.data[sounds[soundIndex+1]], 1-clip(objects[i]->data.x / 640.0, 0, 1));
-									SetSoundVolume(SoundFilesAll.data[sounds[soundIndex+1]], Global.hitVolume * ((float)volume/100.0f));
-									PlaySound(SoundFilesAll.data[sounds[soundIndex+1]]);
+									SetSoundPan(&SoundFilesAll.data[sounds[soundIndex+1]], 1-clip(objects[i]->data.x / 640.0, 0, 1));
+									SetSoundVolume(&SoundFilesAll.data[sounds[soundIndex+1]], Global.hitVolume * ((float)volume/100.0f));
+									PlaySound(&SoundFilesAll.data[sounds[soundIndex+1]]);
 									//std::cout << sounds[1] << " played \n";
 								}
 							}
@@ -525,13 +583,281 @@ void GameManager::update(){
 				}
 			}
 		}
+	}*/
+
+	
+	
+	Node * hitObjectNode = objectsLinkedList.getHead();
+	Node * hitObjectNodeNext;
+	HitObject* hitObject;
+	bool stop = true;
+	int processed = 0;
+	int sizeOfList = objectsLinkedList.getSize();
+	while(true){
+		if(hitObjectNode == NULL){
+			break;
+		}
+
+		hitObject = (HitObject*)hitObjectNode->object;
+		hitObjectNodeNext = hitObjectNode->next;
+		processed++;
+
+		if(IsKeyPressed(SDLK_x)){
+			Global.AutoMouseStartTime = currentTime*1000.0f;
+			Global.AutoMousePositionStart = {320, 240};
+		}
+
+		if(hitObjectNode->prev == NULL){
+			hitObject->data.touch = true;
+			Global.AutoMousePosition = lerp(Global.AutoMousePositionStart, {hitObject->data.x, hitObject->data.y}, clip((currentTime*1000.0f-Global.AutoMouseStartTime) / (hitObject->data.time-Global.AutoMouseStartTime), 0, 1));
+		}
+
+		if (stop && hitObjectNode->prev == NULL && (Global.Key1P or Global.Key2P)){
+			if (hitObject->data.type != 2){
+				if (CheckCollisionPointCircle(Global.MousePosition,Vector2{hitObject->data.x,(float)hitObject->data.y}, circlesize/2.0f)){
+					if(std::abs(currentTime*1000.0f - hitObject->data.time) > gameFile.p50Final + Global.extraJudgementTime/2.0f){
+						hitObject->data.point = 0;
+						if(clickCombo > 30){
+							SetSoundVolume(&SoundFilesAll.data["combobreak"], 1.0f);
+							PlaySound(&SoundFilesAll.data["combobreak"]);
+						}
+						clickCombo = 0;
+						Global.Key1P = false;
+						Global.Key2P = false;
+					}
+					else if(std::abs(currentTime*1000.0f - hitObject->data.time) > gameFile.p100Final + Global.extraJudgementTime/2.0f){
+						hitObject->data.point = 1;
+						score+= 50 + (50 * (std::max(clickCombo-1,0) * difficultyMultiplier * 1)/25);
+						clickCombo++;
+						Global.errorDiv++;
+						Global.errorLast = (long long)((currentTime*1000.0f - hitObject->data.time) * 1000.0f);
+						Global.errorSum += Global.errorLast;
+						Global.Key1P = false;
+						Global.Key2P = false;
+					}
+					else if(std::abs(currentTime*1000.0f - hitObject->data.time) > gameFile.p300Final + Global.extraJudgementTime/2.0f){
+						hitObject->data.point = 2;
+						score+= 100 + (100 * (std::max(clickCombo-1,0) * difficultyMultiplier * 1)/25);
+						clickCombo++;
+						Global.errorDiv++;
+						Global.errorLast = (long long)((currentTime*1000.0f - hitObject->data.time) * 1000.0f);
+						Global.errorSum += Global.errorLast;
+						Global.Key1P = false;
+						Global.Key2P = false;
+					}
+					else{
+						hitObject->data.point = 3;
+						score+= 300 + (300 * (std::max(clickCombo-1,0) * difficultyMultiplier * 1)/25);
+						clickCombo++;
+						Global.errorDiv++;
+						Global.errorLast = (long long)((currentTime*1000.0f - hitObject->data.time) * 1000.0f);
+						Global.errorSum += Global.errorLast;
+						Global.Key1P = false;
+						Global.Key2P = false;
+					}
+					
+					int volume = hitObject->data.volume;
+					if(volume == 0){
+						hitObject->data.volume = hitObject->data.timing.volume;
+						volume = hitObject->data.volume;
+					}
+					std::vector<std::string> sounds = getAudioFilenames(currentTimingSettings.sampleSet, currentTimingSettings.sampleIndex, defaultSampleSet, hitObject->data.normalSet, hitObject->data.additionSet, hitObject->data.hitSound, hitObject->data.hindex, hitObject->data.filename);
+					for(int soundIndex = 0; soundIndex < sounds.size(); soundIndex+=2){
+						if(SoundFilesAll.data.count(sounds[soundIndex]) == 1 and SoundFilesAll.loaded[sounds[soundIndex]].value){
+							SetSoundPan(&SoundFilesAll.data[sounds[soundIndex]], 1-clip(hitObject->data.x / 640.0, 0, 1));
+							SetSoundVolume(&SoundFilesAll.data[sounds[soundIndex]], Global.hitVolume * ((float)volume/100.0f));
+							PlaySound(&SoundFilesAll.data[sounds[soundIndex]]);
+							//std::cout << sounds[0] << " played \n";
+						}
+						else if(SoundFilesAll.data.count(sounds[soundIndex+1]) == 1 and SoundFilesAll.loaded[sounds[soundIndex+1]].value){
+							SetSoundPan(&SoundFilesAll.data[sounds[soundIndex+1]], 1-clip(hitObject->data.x / 640.0, 0, 1));
+							SetSoundVolume(&SoundFilesAll.data[sounds[soundIndex+1]], Global.hitVolume * ((float)volume/100.0f));
+							PlaySound(&SoundFilesAll.data[sounds[soundIndex+1]]);
+							//std::cout << sounds[1] << " played \n";
+						}
+					}
+
+					hitObject->data.time = currentTime*1000.0f;
+					destroyHitObject(hitObjectNode);
+					stop = false;
+				}
+				else{
+					hitObject->data.touch = true;
+					hitObject->update();
+					if(hitObject->data.destruct == true){
+						destroyHitObject(hitObjectNode);
+					}
+				}
+			}
+			else if (hitObject->data.type == 2){
+				if(Slider* tempslider = dynamic_cast<Slider*>(hitObject)){
+					if(CheckCollisionPointCircle(Global.MousePosition,Vector2{hitObject->data.x,(float)hitObject->data.y}, circlesize/2.0f) && currentTime*1000.0f < tempslider->data.time + gameFile.p50Final){
+						if(std::abs(currentTime*1000.0f - tempslider->data.time) > gameFile.p50Final + Global.extraJudgementTime/2.0f){
+							tempslider->is_hit_at_first = true;
+							stop = false;
+							tempslider->earlyhit = true;
+							if(clickCombo > 30){
+								SetSoundVolume(&SoundFilesAll.data["combobreak"], 1.0f);
+								PlaySound(&SoundFilesAll.data["combobreak"]);
+							}
+							clickCombo = 0;
+							Global.Key1P = false;
+							Global.Key2P = false;
+						}
+						else{
+							tempslider->is_hit_at_first = true;
+							stop = false;
+							clickCombo++;
+							Global.Key1P = false;
+							Global.Key2P = false;
+						}
+						int volume = tempslider->data.volume;
+						if(volume == 0){
+							tempslider->data.volume = tempslider->data.timing.volume;
+							volume = tempslider->data.volume;
+						}
+
+						std::vector<std::string> sounds = getAudioFilenames(currentTimingSettings.sampleSet, currentTimingSettings.sampleIndex, defaultSampleSet, hitObject->data.edgeSets[0].first, hitObject->data.edgeSets[0].second, hitObject->data.edgeSounds[0], hitObject->data.hindex, hitObject->data.filename);
+
+						for(int soundIndex = 0; soundIndex < sounds.size(); soundIndex+=2){
+							if(SoundFilesAll.data.count(sounds[soundIndex]) == 1 and SoundFilesAll.loaded[sounds[soundIndex]].value){
+								SetSoundPan(&SoundFilesAll.data[sounds[soundIndex]], 1-clip(hitObject->data.x / 640.0, 0, 1));
+								SetSoundVolume(&SoundFilesAll.data[sounds[soundIndex]], Global.hitVolume * ((float)volume/100.0f) );
+								PlaySound(&SoundFilesAll.data[sounds[soundIndex]]);
+								//std::cout << sounds[0] << " played \n";
+							}
+							else if(SoundFilesAll.data.count(sounds[soundIndex+1]) == 1 and SoundFilesAll.loaded[sounds[soundIndex+1]].value){
+								SetSoundPan(&SoundFilesAll.data[sounds[soundIndex+1]], 1-clip(hitObject->data.x / 640.0, 0, 1));
+								SetSoundVolume(&SoundFilesAll.data[sounds[soundIndex+1]], Global.hitVolume * ((float)volume/100.0f));
+								PlaySound(&SoundFilesAll.data[sounds[soundIndex+1]]);
+								//std::cout << sounds[1] << " played \n";
+							}
+						}
+
+					}
+				}
+				//this cursed else train is nothing to worry about...
+				hitObject->update();
+				if(hitObject->data.destruct == true){
+					destroyHitObject(hitObjectNode);
+				}
+			}
+			else{
+				hitObject->update();
+				if(hitObject->data.destruct == true){
+					destroyHitObject(hitObjectNode);
+				}
+			}
+			Global.Key1P = false;
+			Global.Key2P = false;
+		}
+		else{
+			bool debugf = IsKeyDown(SDLK_x);
+			if(debugf){
+				if(hitObject->data.point != 3 && currentTime*1000.0f > hitObject->data.time){
+					if (hitObject->data.type != 2){
+						//Global.MousePosition = {objects[i]->data.x, objects[i]->data.y};
+						hitObject->data.point = 3;
+						score+= 300 + (300 * (std::max(clickCombo-1,0) * difficultyMultiplier * 1)/25);
+						clickCombo++;
+						int volume = hitObject->data.volume;
+						if(volume == 0){
+							hitObject->data.volume = hitObject->data.timing.volume;
+							volume = hitObject->data.volume;
+						}
+
+						std::vector<std::string> sounds = getAudioFilenames(currentTimingSettings.sampleSet, currentTimingSettings.sampleIndex, defaultSampleSet, hitObject->data.normalSet, hitObject->data.additionSet, hitObject->data.hitSound, hitObject->data.hindex, hitObject->data.filename);
+						
+						//std::cout << sounds.size() << std::endl;
+
+						for(int soundIndex = 0; soundIndex < sounds.size(); soundIndex+=2){
+							if(SoundFilesAll.data.count(sounds[soundIndex]) == 1 and SoundFilesAll.loaded[sounds[soundIndex]].value){
+								SetSoundPan(&SoundFilesAll.data[sounds[soundIndex]], 1-clip(hitObject->data.x / 640.0, 0, 1));
+								SetSoundVolume(&SoundFilesAll.data[sounds[soundIndex]], Global.hitVolume * ((float)volume/100.0f));
+								PlaySound(&SoundFilesAll.data[sounds[soundIndex]]);
+								//std::cout << sounds[0] << " played \n";
+							}
+							else if(SoundFilesAll.data.count(sounds[soundIndex+1]) == 1 and SoundFilesAll.loaded[sounds[soundIndex+1]].value){
+								SetSoundPan(&SoundFilesAll.data[sounds[soundIndex+1]], 1-clip(hitObject->data.x / 640.0, 0, 1));
+								SetSoundVolume(&SoundFilesAll.data[sounds[soundIndex+1]], Global.hitVolume * ((float)volume/100.0f));
+								PlaySound(&SoundFilesAll.data[sounds[soundIndex+1]]);
+								//std::cout << sounds[1] << " played \n";
+							}
+						}
+
+						//std::cout << 3.5*easeInOutCubic((1-(currentTime*1000.0f - objects[i]->data.time + gameFile.preempt)/gameFile.preempt))+1 << std::endl;
+						hitObject->data.time = currentTime*1000.0f;
+
+						Global.AutoMousePositionStart = {hitObject->data.x, hitObject->data.y};
+						Global.AutoMouseStartTime = currentTime*1000.0f;
+
+						destroyHitObject(hitObjectNode);
+
+						stop = false;
+					}
+					else if (hitObject->data.type == 2){
+						Slider* tempslider = dynamic_cast<Slider*>(hitObject);
+						tempslider->is_hit_at_first = true;
+						hitObject->data.point = 3;
+						stop = false;
+						clickCombo++;
+						int volume = tempslider->data.volume;
+						if(volume == 0){
+							tempslider->data.volume = tempslider->data.timing.volume;
+							volume = tempslider->data.volume;
+						}
+
+						std::vector<std::string> sounds = getAudioFilenames(currentTimingSettings.sampleSet, currentTimingSettings.sampleIndex, defaultSampleSet, hitObject->data.edgeSets[0].first, hitObject->data.edgeSets[0].second, hitObject->data.edgeSounds[0], hitObject->data.hindex, hitObject->data.filename);
+						
+
+						for(int soundIndex = 0; soundIndex < sounds.size(); soundIndex+=2){
+							if(SoundFilesAll.data.count(sounds[soundIndex]) == 1 and SoundFilesAll.loaded[sounds[soundIndex]].value){
+								SetSoundPan(&SoundFilesAll.data[sounds[soundIndex]], 1-clip(hitObject->data.x / 640.0, 0, 1));
+								SetSoundVolume(&SoundFilesAll.data[sounds[soundIndex]], Global.hitVolume * ((float)volume/100.0f));
+								PlaySound(&SoundFilesAll.data[sounds[soundIndex]]);
+								//std::cout << sounds[0] << " played \n";
+							}
+							else if(SoundFilesAll.data.count(sounds[soundIndex+1]) == 1 and SoundFilesAll.loaded[sounds[soundIndex+1]].value){
+								SetSoundPan(&SoundFilesAll.data[sounds[soundIndex+1]], 1-clip(hitObject->data.x / 640.0, 0, 1));
+								SetSoundVolume(&SoundFilesAll.data[sounds[soundIndex+1]], Global.hitVolume * ((float)volume/100.0f));
+								PlaySound(&SoundFilesAll.data[sounds[soundIndex+1]]);
+								//std::cout << sounds[1] << " played \n";
+							}
+						}
+						hitObject->update();
+						if(hitObject->data.destruct == true){
+							destroyHitObject(hitObjectNode);
+						}
+					}
+				}
+				else{
+					if (hitObject->data.type == 2){
+						hitObject->update();
+						if(hitObject->data.destruct == true){
+							destroyHitObject(hitObjectNode);
+						}
+					}
+				}
+			}
+			else{
+				hitObject->update();
+				if(hitObject->data.destruct == true){
+					destroyHitObject(hitObjectNode);
+				}
+			}
+		}
+
+		hitObjectNode = hitObjectNodeNext;
 	}
 
+	if(processed != sizeOfList){
+		//std::cout << "what the actual fuck\n";
+	}
 
 	int deadoldsize = dead_objects.size();
 	int deadnewsize = dead_objects.size();
 
-	for(int i = 0; i < dead_objects.size(); i++){
+	/*for(int i = 0; i < dead_objects.size(); i++){
 		dead_objects[i]->data.index = i;
 		dead_objects[i]->dead_update();
 		if(dead_objects[i]->data.expired == true){
@@ -543,8 +869,24 @@ void GameManager::update(){
 			i--;
 			deadoldsize = deadnewsize;
 		}
-	}
+	}*/
 
+	Node * deadHitObjectNode = deadObjectsLinkedList.getHead();
+	Node * deadHitObjectNodeNext;
+	HitObject* deadHitObject;
+	while(true){
+		if(deadHitObjectNode == NULL){
+			break;
+		}
+		deadHitObject = (HitObject*)deadHitObjectNode->object;
+		deadHitObjectNodeNext = deadHitObjectNode->next;
+
+		deadHitObject->dead_update();
+		if(deadHitObject->data.expired == true){
+			destroyDeadHitObject(deadHitObjectNode);
+		}
+		deadHitObjectNode = deadHitObjectNodeNext;
+	}
 
 
 	for(int i = followLines.size()-1; i >= 0; i--){
@@ -565,12 +907,46 @@ void GameManager::update(){
 }
 
 //main rendering loop
-void GameManager::render(){
+void GameManager::unloadSliderTextures(){
+	/*for(int i = dead_objects.size() - 1; i >= 0; i--){
+		////Global.mutex.lock();
+		if(dead_objects[i]->data.type == 2){
+			if(Slider* tempslider = dynamic_cast<Slider*>(dead_objects[i])){
+				tempslider->unloadTextures();
+			}
+		}
+		////Global.mutex.unlock();
+	}*/
 
+	Node * deadHitObjectNode = deadObjectsLinkedList.getHead();
+	Node * deadHitObjectNodeNext;
+	HitObject* deadHitObject;
+	while(true){
+		if(deadHitObjectNode == NULL){
+			break;
+		}
+		deadHitObject = (HitObject*)deadHitObjectNode->object;
+		deadHitObjectNodeNext = deadHitObjectNode->next;
+
+		if(deadHitObject->data.type == 2){
+			if(Slider* tempslider = dynamic_cast<Slider*>(deadHitObject)){
+				tempslider->unloadTextures();
+			}
+		}
+		
+		deadHitObjectNode = deadHitObjectNodeNext;
+	}
+
+
+	Global.sliderTexNeedDeleting = false;
+}
+
+void GameManager::render(){
+	Global.NeedForBackgroundClear = true;
 	if(currentBackgroundTexture.length() > 0 && backgroundTextures.loaded[currentBackgroundTexture].value){
 		//std::cout << currentBackgroundTexture << std::endl;
 		Global.NeedForBackgroundClear = false;
-		DrawTextureCenter(backgroundTextures.data[currentBackgroundTexture], 320, 240, (double)std::max((double)GetScreenWidth()/(double)backgroundTextures.data[currentBackgroundTexture].width, (double)GetScreenHeight()/(double)backgroundTextures.data[currentBackgroundTexture].height) / (double)Global.Scale , WHITE);
+		DrawTextureCenter(&backgroundTextures.data[currentBackgroundTexture], 320, 240, (double)std::max((double)GetScreenWidth()/(double)backgroundTextures.data[currentBackgroundTexture].width, (double)GetScreenHeight()/(double)backgroundTextures.data[currentBackgroundTexture].height) / (double)Global.Scale , WHITE);
 		//DrawRectangle(-5, -5, GetScreenWidth() + 10, GetScreenHeight() + 10, Fade(BLUE, 1.0f));
 	}
 	
@@ -584,31 +960,48 @@ void GameManager::render(){
 
 
 
-	for(int i = objects.size() - 1; i >= 0; i--){
-		////Global.mutex.lock();
-		/*if(!objects[i]->data.startingACombo){
-			float clampedFade = (currentTime*1000.0f - objects[i]->data.lastTime) / (objects[i]->data.time - objects[i]->data.lastTime);
-			DrawLineEx(ScaleCords(lerp({objects[i]->data.ex, objects[i]->data.ey} ,{objects[i]->data.x, objects[i]->data.y}, clip(clampedFade, 0.0f, 1.0f))), 
-			ScaleCords(lerp({objects[i]->data.ex, objects[i]->data.ey} ,{objects[i]->data.x, objects[i]->data.y}, clip(clampedFade + 0.5f, 0.0f, 1.0f))),
-			Scale(3), Fade(WHITE, 0.7f));
-		}*/
-
+	/*for(int i = objects.size() - 1; i >= 0; i--){
 		objects[i]->render();
+	}*/
+
+	Node * hitObjectNode = objectsLinkedList.getHead();
+	Node * hitObjectNodeNext;
+	HitObject* hitObject;
+	
+	while(true){
+		if(hitObjectNode == NULL){
+			break;
+		}
+		hitObject = (HitObject*)hitObjectNode->object;
+		hitObjectNodeNext = hitObjectNode->next;
+
+		hitObject->render();
+
+		hitObjectNode = hitObjectNodeNext;
+	}
+
+	Node * deadHitObjectNode = deadObjectsLinkedList.getHead();
+	Node * deadHitObjectNodeNext;
+	HitObject* deadHitObject;
+	while(true){
+		if(deadHitObjectNode == NULL){
+			break;
+		}
+		deadHitObject = (HitObject*)deadHitObjectNode->object;
+		deadHitObjectNodeNext = deadHitObjectNode->next;
+
+		deadHitObject->dead_render();
 		
-		////Global.mutex.unlock();
+		deadHitObjectNode = deadHitObjectNodeNext;
 	}
-	for(int i = dead_objects.size() - 1; i >= 0; i--){
-		////Global.mutex.lock();
-		dead_objects[i]->dead_render();
-		////Global.mutex.unlock();
-	}
+
 	DrawCNumbersCenter(score, 320, 10, 0.4f, WHITE);
 	DrawCNumbersLeft(clickCombo, 15, 460, 0.6f, WHITE);
 
 	
 	if(spawnedHitObjects == 0 && gameFile.hitObjects[gameFile.hitObjects.size() - 1].time > 6000 + currentTime*1000.0f){
 		////Global.mutex.lock();
-		DrawTextEx(Global.DefaultFont, TextFormat("TO SKIP PRESS \"S\"\n(Keep in mind that this can affect the offset\nbecause of how the raylib sounds system works)"), {ScaleCordX(5), ScaleCordY(420)}, Scale(15), Scale(1), WHITE);
+		DrawTextEx(&Global.DefaultFont, TextFormat("TO SKIP PRESS \"S\"\n(Keep in mind that this can affect the offset\nbecause of how the raylib sounds system works)"), {ScaleCordX(5), ScaleCordY(420)}, Scale(15), Scale(1), WHITE);
 		////Global.mutex.unlock();
 	}
 	//render the points and the combo
@@ -624,27 +1017,31 @@ void GameManager::run(){
 	//ms = getTimer() / 1000.0;
 
 	if(Global.startTime < 0){
-		Global.startTime += Global.FrameTime;
+		if(Global.FrameTime < 10.0f)
+			Global.startTime += Global.FrameTime;
 		Time = Global.startTime;
 		//std::cout << Time << std::endl;
 	}
 	if(Global.startTime >= 0 and startMusic){
 		std::cout << "trying to start music" << std::endl;
-		PlayMusicStream(backgroundMusic);
+		PlayMusicStream(&backgroundMusic);
 		//Global.volume = 1.0f;
 		std::cout << Global.volume << std::endl;
-    	SetMusicVolume(backgroundMusic, Global.volume); //Global.volume
-		SeekMusicStream(backgroundMusic, 0.0f);
-		UpdateMusicStream(backgroundMusic);
+    	SetMusicVolume(&backgroundMusic, Global.volume); //Global.volume
+		//SeekMusicStream(&backgroundMusic, 0.0f);
+		UpdateMusicStream(&backgroundMusic);
 		initTimer();
 		std::cout << "started music" << std::endl;
 		std::cout << "first update" << std::endl;
+		std::cout << sizeof(HitObjectData) << std::endl;
+		std::cout << sizeof(HitObjectData) * gameFile.hitObjects.size() << std::endl;
+		std::cout << "sizes given in bytes\n";
 		Global.CurrentInterpolatedTime = 0;
 		Global.LastOsuTime = 0;
 		TimeLast = ms;
 		startMusic = false;
 		Global.startTime2 = ms;
-		double Time = (double)GetMusicTimePlayed(backgroundMusic) * 1000.0;
+		double Time = (double)GetMusicTimePlayed(&backgroundMusic) * 1000.0;
 		double amog = getTimer();
 		std::cout << "Extra Time in ms " << Global.extraJudgementTime << std::endl;
 		std::cout << "Time:" << Time << std::endl;
@@ -656,28 +1053,28 @@ void GameManager::run(){
 	}
 	if(true){
 		if(Global.volumeChanged){
-			SetMusicVolume(backgroundMusic, Global.volume);
+			SetMusicVolume(&backgroundMusic, Global.volume);
 			Global.volumeChanged = false;
 		}
-		UpdateMusicStream(backgroundMusic);
+		UpdateMusicStream(&backgroundMusic);
 		if(spawnedHitObjects == 0 && gameFile.hitObjects[gameFile.hitObjects.size() - 1].time > 6000 + currentTime*1000.0f){
 			//DrawTextEx(Global.DefaultFont, TextFormat("TO SKIP PRESS \"S\"\n(Keep in mind that this can affect the offset\nbecause of how the raylib sounds system works)"), {ScaleCordX(5), ScaleCordY(420)}, Scale(15), Scale(1), WHITE);
-			if(IsKeyPressed(SDL_SCANCODE_S )){
-				SeekMusicStream(backgroundMusic, (gameFile.hitObjects[gameFile.hitObjects.size() - 1].time - 3000.0f) / 1000.0f);
+			if(IsKeyPressed(SDLK_y ) && false){
+				SeekMusicStream(&backgroundMusic, (gameFile.hitObjects[gameFile.hitObjects.size() - 1].time - 3000.0f) / 1000.0f);
 			}
 		}
-		if(GetMusicTimeLength(backgroundMusic) - GetMusicTimePlayed(backgroundMusic) < 0.05f)
+		if(GetMusicTimeLength(&backgroundMusic) - GetMusicTimePlayed(&backgroundMusic) < 0.005f)
 			stop = true;
 		if(stop && Global.curTime2 < 1.0f){
-			StopMusicStream(backgroundMusic);
+			StopMusicStream(&backgroundMusic);
 		}
 		
 		
-		if (IsMusicStreamPlaying(backgroundMusic)){
-			Time = (double)GetMusicTimePlayed(backgroundMusic) * 1000.0;
+		if (IsMusicStreamPlaying(&backgroundMusic)){
+			Time = (double)GetMusicTimePlayed(&backgroundMusic) * 1000.0;
 			if(!AreSame(TimerLast, Time)){
 				//Global.extraJudgementTime = std::abs((Time - TimerLast) / 1.5f);
-				TimerLast = (double)GetMusicTimePlayed(backgroundMusic) * 1000.0;
+				TimerLast = (double)GetMusicTimePlayed(&backgroundMusic) * 1000.0;
 				TimeLast = ms;
 			}
 			else{
@@ -694,34 +1091,38 @@ void GameManager::run(){
 
 		bool IsInterpolating;
 
-		if (IsMusicStreamPlaying(backgroundMusic)){
-			if (GetMusicTimePlayed(backgroundMusic) * 1000.0 != 0)
+		if (IsMusicStreamPlaying(&backgroundMusic)){
+			if (GetMusicTimePlayed(&backgroundMusic) * 1000.0 != 0)
 				IsInterpolating = true;
 			double ElapsedTime = getTimer() - Global.LastOsuTime;
 			Global.LastOsuTime = getTimer();
 			Global.CurrentInterpolatedTime += ElapsedTime;
-			if (!IsInterpolating || std::abs(GetMusicTimePlayed(backgroundMusic) * 1000.0 - Global.CurrentInterpolatedTime) > 8){
-				Global.CurrentInterpolatedTime = ElapsedTime < 0 ? GetMusicTimePlayed(backgroundMusic) * 1000.0: std::max(LastInterpolatedTime, GetMusicTimePlayed(backgroundMusic) * 1000.0);
+			if (!IsInterpolating || std::abs(GetMusicTimePlayed(&backgroundMusic) * 1000.0 - Global.CurrentInterpolatedTime) > 8){
+				Global.CurrentInterpolatedTime = ElapsedTime < 0 ? GetMusicTimePlayed(&backgroundMusic) * 1000.0: std::max(LastInterpolatedTime, GetMusicTimePlayed(&backgroundMusic) * 1000.0);
 				IsInterpolating = false;
-				std::cout << "failed interpolation at time " << Global.CurrentInterpolatedTime << "\n";
+				//std::cout << "failed interpolation at time " << Global.CurrentInterpolatedTime << "\n";
 			}
 			else{
-				Global.CurrentInterpolatedTime += (GetMusicTimePlayed(backgroundMusic) * 1000.0 - Global.CurrentInterpolatedTime) / 5;
+				Global.CurrentInterpolatedTime += (GetMusicTimePlayed(&backgroundMusic) * 1000.0 - Global.CurrentInterpolatedTime) / 5;
 				Global.CurrentInterpolatedTime = std::max(LastInterpolatedTime, Global.CurrentInterpolatedTime);
 			}
 		}
 
-		Global.currentOsuTime = IsMusicStreamPlaying(backgroundMusic) ? Global.CurrentInterpolatedTime : GetMusicTimePlayed(backgroundMusic);
+		Global.currentOsuTime = IsMusicStreamPlaying(&backgroundMusic) ? Global.CurrentInterpolatedTime : GetMusicTimePlayed(&backgroundMusic);
 
 		currentTime = (double)Time / 1000.0;
-		if(IsMusicStreamPlaying(backgroundMusic)){
-			currentTime = (Global.currentOsuTime + Global.offsetTime) / 1000.0;
+		if(IsMusicStreamPlaying(&backgroundMusic)){
+			//currentTime = (Global.currentOsuTime + Global.offsetTime) / 1000.0;
+			currentTime = GetMusicTimePlayed(&backgroundMusic);
+			//std::cout << "music playin\n";
 		}
 
 		//currentTime -= 8/1000.0f;
 		//currentTime *= 2;
+		//std::cout << "update\n";
 		GameManager::update();
-		//std::cout << "called update at time " << Global.currentOsuTime << "\n";
+		//std::cout << "update done\n";
+		//std::cout << "called update at time " << currentTime << "\n";
 		//currentTime += 8/1000.0f;
 	}
 	
@@ -758,13 +1159,12 @@ Vector2 get2BezierPoint(std::vector<Vector2> &points, int numPoints, float t){
     return answer;
 }
 
-
 //load the beatmap
 void GameManager::loadDefaultSkin(std::string filename){
 	currentComboIndex = 0;
 	std::vector<std::string> files;
 	files.clear();
-	Global.Path = "resources/default_skin/";
+	Global.Path = "sdmc:/3ds/resources/default_skin/";
 	files = ls(".png");
 
 	std::sort(files.begin(), files.end(), []
@@ -775,53 +1175,86 @@ void GameManager::loadDefaultSkin(std::string filename){
 
 	for(int i = 0; i < files.size(); i++){
 		if(IsFileExtension(files[i].c_str(),".png")){
-			if(files[i].rfind("hitcircleoverlay.png", 0) == 0)
+			if(files[i].rfind("hitcircleoverlay.png", 0) == 0){
+				UnloadTexture(&hitCircleOverlay);
 				hitCircleOverlay = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("hitcircleselect.png", 0) == 0)
+			}
+			else if(files[i].rfind("hitcircleselect.png", 0) == 0){
+				UnloadTexture(&selectCircle);
 				selectCircle = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("hitcircle", 0) == 0)
+			}
+			else if(files[i].rfind("hitcircle.png", 0) == 0){
+				UnloadTexture(&hitCircle);
 				hitCircle = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("approachcircle", 0) == 0)
+			}
+			else if(files[i].rfind("approachcircle.png", 0) == 0){
+				UnloadTexture(&approachCircle);
 				approachCircle = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("hit300k", 0) == 0)
+			}
+			else if(files[i].rfind("hit300k.png", 0) == 0)
 				;
-			else if(files[i].rfind("hit300", 0) == 0)
+			else if(files[i].rfind("hit300.png", 0) == 0){
+				UnloadTexture(&hit300);
 				hit300 = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("hit100k", 0) == 0)
+			}
+			else if(files[i].rfind("hit100k.png", 0) == 0)
 				;
-			else if(files[i].rfind("hit100", 0) == 0)
+			else if(files[i].rfind("hit100.png", 0) == 0){
+				UnloadTexture(&hit100);
 				hit100 = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("hit50k", 0) == 0)
+			}
+			else if(files[i].rfind("hit50k.png", 0) == 0)
 				;
-			else if(files[i].rfind("hit50", 0) == 0)
+			else if(files[i].rfind("hit50.png", 0) == 0){
+				UnloadTexture(&hit50);
 				hit50 = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("hit0", 0) == 0)
+			}
+			else if(files[i].rfind("hit0.png", 0) == 0){
+				UnloadTexture(&hit0);
 				hit0 = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("sliderscorepoint", 0) == 0)
+			}
+			else if(files[i].rfind("sliderscorepoint.png", 0) == 0){
+				UnloadTexture(&sliderscorepoint);
 				sliderscorepoint = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("sliderfollowcircle", 0) == 0)
+			}
+			else if(files[i].rfind("sliderfollowcircle.png", 0) == 0){
+				UnloadTexture(&sliderfollow);
 				sliderfollow = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("sliderb0", 0) == 0)
+			}
+			else if(files[i].rfind("sliderb0.png", 0) == 0){
+				UnloadTexture(&sliderb);
 				sliderb = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("reversearrow", 0) == 0)
+			}
+			else if(files[i].rfind("reversearrow.png", 0) == 0){
+				UnloadTexture(&reverseArrow);
 				reverseArrow = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("spinner-circle", 0) == 0){
+			}
+			else if(files[i].rfind("spinner-circle.png", 0) == 0){
+				UnloadTexture(&spinnerCircle);
 				spinnerCircle = LoadTexture((Global.Path + files[i]).c_str());
 				renderSpinnerCircle = true;
 			}
-			else if(files[i].rfind("spinner-metre", 0) == 0){
+			else if(files[i].rfind("spinner-metre.png", 0) == 0){
+				UnloadTexture(&spinnerMetre);
 				spinnerMetre = LoadTexture((Global.Path + files[i]).c_str());
 				renderSpinnerMetre = true;
 			}
-			else if(files[i].rfind("spinner-bottom", 0) == 0)
+			else if(files[i].rfind("spinner-bottom.png", 0) == 0){
+				UnloadTexture(&spinnerBottom);
 				spinnerBottom = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("spinner-top", 0) == 0)
+			}
+			else if(files[i].rfind("spinner-top.png", 0) == 0){
+				UnloadTexture(&spinnerTop);
 				spinnerTop = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("spinner-approachcircle", 0) == 0)
+			}
+			else if(files[i].rfind("spinner-approachcircle.png", 0) == 0){
+				UnloadTexture(&spinnerApproachCircle);
 				spinnerApproachCircle = LoadTexture((Global.Path + files[i]).c_str());
+			}
 			else{
 				for(int j = 0; j < 10; j++){
-					if(files[i].rfind(("default-" + (std::to_string(j))).c_str(), 0) == 0){
+					if(files[i].rfind(("default-" + (std::to_string(j)) + ".").c_str(), 0) == 0){
+						UnloadTexture(&numbers[j]);
     					numbers[j] = LoadTexture((Global.Path + files[i]).c_str());
 					}
 				}
@@ -841,7 +1274,7 @@ void GameManager::loadGameSkin(std::string filename){
 
 	std::vector<std::string> files;
 	files.clear();
-	Global.Path = "resources/skin/";
+	Global.Path = "sdmc:/3ds/resources/skin/";
 	files = ls(".png");
 
 	std::sort(files.begin(), files.end(), []
@@ -852,57 +1285,86 @@ void GameManager::loadGameSkin(std::string filename){
 
 	for(int i = 0; i < files.size(); i++){
 		if(IsFileExtension(files[i].c_str(),".png")){
-			if(files[i].rfind("hitcircleoverlay.png", 0) == 0)
+			if(files[i].rfind("hitcircleoverlay.png", 0) == 0){
+				UnloadTexture(&hitCircleOverlay);
 				hitCircleOverlay = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("hitcircleselect.png", 0) == 0)
+			}
+			else if(files[i].rfind("hitcircleselect.png", 0) == 0){
+				UnloadTexture(&selectCircle);
 				selectCircle = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("hitcircle", 0) == 0)
+			}
+			else if(files[i].rfind("hitcircle.png", 0) == 0){
+				UnloadTexture(&hitCircle);
 				hitCircle = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("approachcircle", 0) == 0)
+			}
+			else if(files[i].rfind("approachcircle.png", 0) == 0){
+				UnloadTexture(&approachCircle);
 				approachCircle = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("hit300k", 0) == 0)
+			}
+			else if(files[i].rfind("hit300k.png", 0) == 0)
 				;
-			else if(files[i].rfind("hit300", 0) == 0)
+			else if(files[i].rfind("hit300.png", 0) == 0){
+				UnloadTexture(&hit300);
 				hit300 = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("hit100k", 0) == 0)
+			}
+			else if(files[i].rfind("hit100k.png", 0) == 0)
 				;
-			else if(files[i].rfind("hit100", 0) == 0)
+			else if(files[i].rfind("hit100.png", 0) == 0){
+				UnloadTexture(&hit100);
 				hit100 = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("hit50k", 0) == 0)
+			}
+			else if(files[i].rfind("hit50k.png", 0) == 0)
 				;
-			else if(files[i].rfind("hit50", 0) == 0)
+			else if(files[i].rfind("hit50.png", 0) == 0){
+				UnloadTexture(&hit50);
 				hit50 = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("hit0", 0) == 0)
+			}
+			else if(files[i].rfind("hit0.png", 0) == 0){
+				UnloadTexture(&hit0);
 				hit0 = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("sliderscorepoint", 0) == 0)
+			}
+			else if(files[i].rfind("sliderscorepoint.png", 0) == 0){
+				UnloadTexture(&sliderscorepoint);
 				sliderscorepoint = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("sliderfollowcircle", 0) == 0)
+			}
+			else if(files[i].rfind("sliderfollowcircle.png", 0) == 0){
+				UnloadTexture(&sliderfollow);
 				sliderfollow = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("sliderb0", 0) == 0)
+			}
+			else if(files[i].rfind("sliderb0.png", 0) == 0){
+				UnloadTexture(&sliderb);
 				sliderb = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("reversearrow", 0) == 0)
+			}
+			else if(files[i].rfind("reversearrow.png", 0) == 0){
+				UnloadTexture(&reverseArrow);
 				reverseArrow = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("spinner-circle", 0) == 0){
+			}
+			else if(files[i].rfind("spinner-circle.png", 0) == 0){
+				UnloadTexture(&spinnerCircle);
 				spinnerCircle = LoadTexture((Global.Path + files[i]).c_str());
-				temprenderSpinnerCircle = true;
+				renderSpinnerCircle = true;
 			}
-			else if(files[i].rfind("spinner-metre", 0) == 0){
+			else if(files[i].rfind("spinner-metre.png", 0) == 0){
+				UnloadTexture(&spinnerMetre);
 				spinnerMetre = LoadTexture((Global.Path + files[i]).c_str());
-				temprenderSpinnerMetre = true;
+				renderSpinnerMetre = true;
 			}
-			else if(files[i].rfind("spinner-background", 0) == 0){
-				spinnerBack = LoadTexture((Global.Path + files[i]).c_str());
-				temprenderSpinnerBack = true;
-			}
-			else if(files[i].rfind("spinner-bottom", 0) == 0)
+			else if(files[i].rfind("spinner-bottom.png", 0) == 0){
+				UnloadTexture(&spinnerBottom);
 				spinnerBottom = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("spinner-top", 0) == 0)
+			}
+			else if(files[i].rfind("spinner-top.png", 0) == 0){
+				UnloadTexture(&spinnerTop);
 				spinnerTop = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("spinner-approachcircle", 0) == 0)
+			}
+			else if(files[i].rfind("spinner-approachcircle.png", 0) == 0){
+				UnloadTexture(&spinnerApproachCircle);
 				spinnerApproachCircle = LoadTexture((Global.Path + files[i]).c_str());
+			}
 			else{
 				for(int j = 0; j < 10; j++){
-					if(files[i].rfind(("default-" + (std::to_string(j))).c_str(), 0) == 0){
+					if(files[i].rfind(("default-" + (std::to_string(j)) + ".").c_str(), 0) == 0){
+						UnloadTexture(&numbers[j]);
     					numbers[j] = LoadTexture((Global.Path + files[i]).c_str());
 					}
 				}
@@ -932,58 +1394,87 @@ void GameManager::loadBeatmapSkin(std::string filename){
 	temprenderSpinnerBack = false;
 	for(int i = 0; i < files.size(); i++){
 		if(IsFileExtension(files[i].c_str(),".png")){
-			if(files[i].rfind("hitcircleoverlay.png", 0) == 0)
+			if(files[i].rfind("hitcircleoverlay.png", 0) == 0){
+				UnloadTexture(&hitCircleOverlay);
 				hitCircleOverlay = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("hitcircleselect.png", 0) == 0)
+			}
+			else if(files[i].rfind("hitcircleselect.png", 0) == 0){
+				UnloadTexture(&selectCircle);
 				selectCircle = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("hitcircle", 0) == 0)
+			}
+			else if(files[i].rfind("hitcircle.png", 0) == 0){
+				UnloadTexture(&hitCircle);
 				hitCircle = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("approachcircle", 0) == 0)
+			}
+			else if(files[i].rfind("approachcircle.png", 0) == 0){
+				UnloadTexture(&approachCircle);
 				approachCircle = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("hit300k", 0) == 0)
+			}
+			else if(files[i].rfind("hit300k.png", 0) == 0)
 				;
-			else if(files[i].rfind("hit300", 0) == 0)
+			else if(files[i].rfind("hit300.png", 0) == 0){
+				UnloadTexture(&hit300);
 				hit300 = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("hit100k", 0) == 0)
+			}
+			else if(files[i].rfind("hit100k.png", 0) == 0)
 				;
-			else if(files[i].rfind("hit100", 0) == 0)
+			else if(files[i].rfind("hit100.png", 0) == 0){
+				UnloadTexture(&hit100);
 				hit100 = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("hit50k", 0) == 0)
+			}
+			else if(files[i].rfind("hit50k.png", 0) == 0)
 				;
-			else if(files[i].rfind("hit50", 0) == 0)
+			else if(files[i].rfind("hit50.png", 0) == 0){
+				UnloadTexture(&hit50);
 				hit50 = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("hit0", 0) == 0)
+			}
+			else if(files[i].rfind("hit0.png", 0) == 0){
+				UnloadTexture(&hit0);
 				hit0 = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("sliderscorepoint", 0) == 0)
+			}
+			else if(files[i].rfind("sliderscorepoint.png", 0) == 0){
+				UnloadTexture(&sliderscorepoint);
 				sliderscorepoint = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("sliderfollowcircle", 0) == 0)
+			}
+			else if(files[i].rfind("sliderfollowcircle.png", 0) == 0){
+				UnloadTexture(&sliderfollow);
 				sliderfollow = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("sliderb0", 0) == 0)
+			}
+			else if(files[i].rfind("sliderb0.png", 0) == 0){
+				UnloadTexture(&sliderb);
 				sliderb = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("reversearrow", 0) == 0)
+			}
+			else if(files[i].rfind("reversearrow.png", 0) == 0){
+				UnloadTexture(&reverseArrow);
 				reverseArrow = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("spinner-circle", 0) == 0){
+			}
+			else if(files[i].rfind("spinner-circle.png", 0) == 0){
+				UnloadTexture(&spinnerCircle);
 				spinnerCircle = LoadTexture((Global.Path + files[i]).c_str());
 				renderSpinnerCircle = true;
 			}
-			else if(files[i].rfind("spinner-metre", 0) == 0){
+			else if(files[i].rfind("spinner-metre.png", 0) == 0){
+				UnloadTexture(&spinnerMetre);
 				spinnerMetre = LoadTexture((Global.Path + files[i]).c_str());
 				renderSpinnerMetre = true;
 			}
-			else if(files[i].rfind("spinner-background", 0) == 0){
-				spinnerBack = LoadTexture((Global.Path + files[i]).c_str());
-				temprenderSpinnerBack = true;
-			}
-			else if(files[i].rfind("spinner-bottom", 0) == 0)
+			else if(files[i].rfind("spinner-bottom.png", 0) == 0){
+				UnloadTexture(&spinnerBottom);
 				spinnerBottom = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("spinner-top", 0) == 0)
+			}
+			else if(files[i].rfind("spinner-top.png", 0) == 0){
+				UnloadTexture(&spinnerTop);
 				spinnerTop = LoadTexture((Global.Path + files[i]).c_str());
-			else if(files[i].rfind("spinner-approachcircle", 0) == 0)
+			}
+			else if(files[i].rfind("spinner-approachcircle.png", 0) == 0){
+				UnloadTexture(&spinnerApproachCircle);
 				spinnerApproachCircle = LoadTexture((Global.Path + files[i]).c_str());
+			}
 			else{
 				for(int j = 0; j < 10; j++){
-					if(files[i].rfind(("default-" + (std::to_string(j))).c_str(), 0) == 0){
-						numbers[j] = LoadTexture((Global.Path + files[i]).c_str());
+					if(files[i].rfind(("default-" + (std::to_string(j)) + ".").c_str(), 0) == 0){
+						UnloadTexture(&numbers[j]);
+    					numbers[j] = LoadTexture((Global.Path + files[i]).c_str());
 					}
 				}
 			}
@@ -994,7 +1485,6 @@ void GameManager::loadBeatmapSkin(std::string filename){
 void GameManager::loadBeatmapSound(std::string filename){
 
 }
-
 
 void GameManager::loadGame(std::string filename){
 	//create a parser and parse the file
@@ -1016,9 +1506,37 @@ void GameManager::loadGame(std::string filename){
 	lastTimingLoc = gameFile.timingPoints.size() - 1; 
 	lastCurrentTiming = gameFile.timingPoints.size() - 1; 
 
-	GamePathWithSlash = Global.Path + '/';
+	std::string temporaryPath = filename;
+	while(true){
+		if(temporaryPath.size() == 0)
+			break;
+		if(temporaryPath[temporaryPath.size() - 1] == '/')
+			break;
+		temporaryPath.pop_back();
+	}
+	if(temporaryPath.size() != 0){
+		temporaryPath.pop_back();
+	}
 
-	lastPath = Global.Path;
+	GamePathWithSlash = temporaryPath + '/';
+
+	lastPath = temporaryPath;
+
+	if(std::stof(gameFile.configDifficulty["ApproachRate"]) < 5.0f){
+		gameFile.preempt = 1200.0f + 600.0f * (5.0f - std::stof(gameFile.configDifficulty["ApproachRate"])) / 5.0f;
+		gameFile.fade_in = 800.0f + 400.0f * (5.0f - std::stof(gameFile.configDifficulty["ApproachRate"])) / 5.0f;
+	}
+	else if(std::stof(gameFile.configDifficulty["ApproachRate"]) > 5.0f){
+		gameFile.preempt = 1200.0f - 750.0f * (std::stof(gameFile.configDifficulty["ApproachRate"]) - 5.0f) / 5.0f;
+		gameFile.fade_in = 800.0f - 500.0f * (std::stof(gameFile.configDifficulty["ApproachRate"]) - 5.0f) / 5.0f;
+	}
+	else{
+		gameFile.preempt = 1200.0f;
+		gameFile.fade_in = 800.0f;
+	}
+
+	float stackL = std::stof(gameFile.configGeneral["StackLeniency"]);
+	stackL = clip(stackL, 0.0f, 1.0f);
 
 	//---------------------------------------------------------------------------------------------------------------------------------------------------------
 	//------------------------------------------------------------------|LOADING BACKGROUNDS|------------------------------------------------------------------
@@ -1035,11 +1553,15 @@ void GameManager::loadGame(std::string filename){
 	Global.Path = lastPath + '/';
 	files = ls(".png");
 
+	float circlesize2 = 54.4f - (4.48f * std::stof(gameFile.configDifficulty["CircleSize"]));
+
 	//precalculate all the sliders and check how long we need to wait for it
+	std::cout << "Loading sliders..." << std::endl;
 	double start = getTimer();
 	for(int i = 0; i < gameFile.hitObjects.size(); i++){
 		if(gameFile.hitObjects[i].type == 2){
 			std::vector<Vector2> edgePoints; 
+			edgePoints.reserve(gameFile.hitObjects[i].curvePoints.size() + 1);
 			edgePoints.push_back(Vector2{(float)gameFile.hitObjects[i].x, (float)gameFile.hitObjects[i].y});
 			float resolution = gameFile.hitObjects[i].length;
     		float currentResolution = 0;
@@ -1058,6 +1580,7 @@ void GameManager::loadGame(std::string filename){
 			if(gameFile.hitObjects[i].curveType == 'L'){
 				std::vector<float> lineLengths;
 				//std::cout << "will calculate linear slider id " << i << " at time " << gameFile.hitObjects[i].time << std::endl;
+				lineLengths.reserve(edgePoints.size());
 				for(size_t j = 0; j < edgePoints.size()-1; j++)
 					lineLengths.push_back(std::sqrt(std::pow(std::abs(edgePoints[j].x - edgePoints[j+1].x),2)+std::pow(std::abs(edgePoints[j].y - edgePoints[j+1].y),2)));
 				for(size_t j = 0; j < lineLengths.size(); j++)
@@ -1143,6 +1666,7 @@ void GameManager::loadGame(std::string filename){
 							currentResolution = 0;
 							int num = tempEdges.size();
 							num = std::max((int)(gameFile.hitObjects[i].length/curves), 50);
+							num = std::min(num, 1);
 							int m = 0;
 							float tempLength = 0;
 							Vector2 lasttmp;
@@ -1175,28 +1699,56 @@ void GameManager::loadGame(std::string filename){
 
 				}
 			}
-
+			edgePoints.clear();
 		}
+		/*if(i > 0){
+			if(std::abs(gameFile.hitObjects[i - 1].time - gameFile.hitObjects[i].time) < gameFile.preempt * stackL){
+				int number = 1;
+				int currentX = gameFile.hitObjects[i].x;
+				int currentY = gameFile.hitObjects[i].y;
+				while(true){
+					if(i - number < 0){
+						break;
+					}
+					if(std::abs(gameFile.hitObjects[i - number].time - gameFile.hitObjects[i - (number - 1)].time) >= gameFile.preempt * stackL){
+						break;
+					}
+					if((int)gameFile.hitObjects[i - number].x != currentX or (int)gameFile.hitObjects[i - number].t != currentY){
+
+					}
+					gameFile.hitObjects[i - number].x = gameFile.hitObjects[i - number].x - number * (circlesize2 / 6.0f);
+					gameFile.hitObjects[i - number].y = gameFile.hitObjects[i - number].y - number * (circlesize2 / 6.0f);
+					number++;
+				}
+			}
+		}
+		//THIS IS A REALLY BAD WAY OF DOING THIS, NEEDS REWRITING
+		*/
+		std::cout << "Calculated object at time: " << gameFile.hitObjects[i].time << std::endl;
 	}
 	std::cout << "Sliders precalculated in " << getTimer() - start << "ms" << std::endl;
+	std::cout << "done, press select to continue" << std::endl;
+	while(false){
+        PollInputEvents();
+        if(IsKeyDown(KEY_SELECT)){
+            while(true){
+                PollInputEvents();
+                if(!IsKeyDown(KEY_SELECT)){
+                    break;
+                }
+                svcSleepThread(10000);
+            }
+            break;
+        }
+        svcSleepThread(10000);
+    }
 	Global.loadingState = 2;
 	
 	
 
 	
 	//calculate all the variables for the game (these are mathematically correct but they feel weird?)
-	if(std::stof(gameFile.configDifficulty["ApproachRate"]) < 5.0f){
-		gameFile.preempt = 1200.0f + 600.0f * (5.0f - std::stof(gameFile.configDifficulty["ApproachRate"])) / 5.0f;
-		gameFile.fade_in = 800.0f + 400.0f * (5.0f - std::stof(gameFile.configDifficulty["ApproachRate"])) / 5.0f;
-	}
-	else if(std::stof(gameFile.configDifficulty["ApproachRate"]) > 5.0f){
-		gameFile.preempt = 1200.0f - 750.0f * (std::stof(gameFile.configDifficulty["ApproachRate"]) - 5.0f) / 5.0f;
-		gameFile.fade_in = 800.0f - 500.0f * (std::stof(gameFile.configDifficulty["ApproachRate"]) - 5.0f) / 5.0f;
-	}
-	else{
-		gameFile.preempt = 1200.0f;
-		gameFile.fade_in = 800.0f;
-	}
+	
 	//TODO: Spinners are still in their initial state, this is probably pretty wrong
 	float od = std::stoi(gameFile.configDifficulty["OverallDifficulty"]);
 	if(od < 5){
@@ -1220,21 +1772,25 @@ void GameManager::loadGame(std::string filename){
 	std::cout << std::stof(gameFile.configDifficulty["ApproachRate"]) << " " << gameFile.configDifficulty["ApproachRate"] << std::endl;
 	
 	//debug, just say what the name of the music file is and load it
-	//std::cout << (Global.Path + '/' + gameFile.configGeneral["AudioFilename"]) << std::endl;
-	//backgroundMusic = LoadMusicStream((Global.Path + '/' + gameFile.configGeneral["AudioFilename"]).c_str());
+	
 
 	//get the file size of the music file and allocate memory for it
-	FILE *music = fopen((Global.Path + '/' + gameFile.configGeneral["AudioFilename"]).c_str(), "rb");
+	/*FILE *music = fopen((Global.Path + '/' + gameFile.configGeneral["AudioFilename"]).c_str(), "rb");
 	fseek(music, 0, SEEK_END);
 	musicSize = ftell(music);
-	fseek(music, 0, SEEK_SET);  /* same as rewind(f); */
+	fseek(music, 0, SEEK_SET);  
 	musicData = (char *)malloc(musicSize + 1);
 	fread(musicData, musicSize, 1, music);
 	fclose(music);
-	musicData[musicSize] = 0;
+	musicData[musicSize] = 0;*/
 	//load the music as a raylib music file
-	backgroundMusic = LoadMusicStreamFromMemory(GetFileExtension((Global.Path + '/' + gameFile.configGeneral["AudioFilename"]).c_str()), (const unsigned char *)musicData, musicSize);
+
+
+	//backgroundMusic = LoadMusicStreamFromMemory(GetFileExtension((Global.Path + '/' + gameFile.configGeneral["AudioFilename"]).c_str()), (const unsigned char *)musicData, musicSize);
 	
+	//free(musicData);
+
+
 	Global.loadingState = 6;
 
 	//reset the score and the combo
@@ -1251,12 +1807,14 @@ void GameManager::loadGame(std::string filename){
 	
 	//more difficulty stuff, may also be wrong
 	float overalldifficulty = std::stof(gameFile.configDifficulty["OverallDifficulty"]);
-	difficultyMultiplier = ((hpdrainrate + circlesize + overalldifficulty + clip((float)gameFile.hitObjects.size() / GetMusicTimeLength(backgroundMusic) * 8.f, 0.f, 16.f)) / 38.f * 5.f);
+	difficultyMultiplier = ((hpdrainrate + std::stof(gameFile.configDifficulty["CircleSize"]) + std::stof(gameFile.configDifficulty["OverallDifficulty"]) + clip((float)gameFile.hitObjects.size() / GetMusicTimeLength(&backgroundMusic) * 8.f, 0.f, 16.f)) / 38.f * 5.f);
 	if (gameFile.configDifficulty.find("SliderMultiplier") != gameFile.configDifficulty.end())
 		sliderSpeed = std::stof(gameFile.configDifficulty["SliderMultiplier"]);
 
 	
 	
+
+
 
 	
 	Global.GameTextures = 2;
@@ -1292,16 +1850,25 @@ void GameManager::loadGame(std::string filename){
 	}
 
 	//load all of the hitsounds into memory
-	loadGameSounds();
-
-	//redundant but meh...
-	files.clear();
-	Global.Path = "resources/skin/";
-	files = ls(".wav");
 
 
 	//followpoint precalculations/creation. These values are wrong.
 	//TODO: fix this bs
+	std::cout << "press select to load timing points" << std::endl;
+	while(false){
+        PollInputEvents();
+        if(IsKeyDown(KEY_SELECT)){
+            while(true){
+                PollInputEvents();
+                if(!IsKeyDown(KEY_SELECT)){
+                    break;
+                }
+                svcSleepThread(10000);
+            }
+            break;
+        }
+        svcSleepThread(10000);
+    }
 	std::reverse(gameFile.timingPoints.begin(),gameFile.timingPoints.end());
 	std::reverse(gameFile.events.begin(),gameFile.events.end());
 
@@ -1371,12 +1938,15 @@ void GameManager::loadGame(std::string filename){
 				
 				tempData.timing.beatLength = times[index + 1].beatLength;
 				tempData.timing.sliderSpeedOverride = times[index + 1].sliderSpeedOverride;
-				std::vector<int> output = sliderPreInit(tempData);
+				//std::vector<int> output = sliderPreInit(tempData);
+				int *output = sliderPreInit(tempData);
 
 				tempPoint.startTime = output[2] - followPointFadeTime;
 				tempPoint.startTime2 = output[2];
 				tempPoint.startX = output[0];
 				tempPoint.startY = output[1];
+
+				free(output);
 
 				//std::cout << "done calculation of follow line starting from slider at time: " << tempData.time << "\n";
 				//--------------------------------------------- STANDART SLIDER PROCEDURE ---------------------------------------------
@@ -1406,7 +1976,7 @@ void GameManager::loadGame(std::string filename){
 	std::reverse(followLines.begin(),followLines.end());
 	std::reverse(gameFile.hitObjects.begin(),gameFile.hitObjects.end());
 
-	reverse(times.begin(), times.end());
+	//reverse(times.begin(), times.end());
 
 	defaultSampleSet = 0;
 	if(gameFile.configGeneral["SampleSet"] == "Soft"){
@@ -1416,16 +1986,60 @@ void GameManager::loadGame(std::string filename){
 		defaultSampleSet = 2;
 	}
 
+	std::cout << "press select to load sounds" << std::endl;
+	while(false){
+        PollInputEvents();
+        if(IsKeyDown(KEY_SELECT)){
+            while(true){
+                PollInputEvents();
+                if(!IsKeyDown(KEY_SELECT)){
+                    break;
+                }
+                svcSleepThread(10000);
+            }
+            break;
+        }
+        svcSleepThread(10000);
+    }
+
 	SoundFiles.data.clear();
 	SoundFiles.loaded.clear();
-	
+	loadGameSounds();
+
+	Global.Path.pop_back();
+	std::cout << (Global.Path + '/' + gameFile.configGeneral["AudioFilename"]) << " press select to load" << std::endl;
+	while(false){
+        PollInputEvents();
+        if(IsKeyDown(KEY_SELECT)){
+            while(true){
+                PollInputEvents();
+                if(!IsKeyDown(KEY_SELECT)){
+                    break;
+                }
+                svcSleepThread(10000);
+            }
+            break;
+        }
+        svcSleepThread(10000);
+    }
+	backgroundMusic = LoadMusicStream((Global.Path + '/' + gameFile.configGeneral["AudioFilename"]).c_str());
+
+	std::cout << "Free Vram: " << vramSpaceFree() << std::endl;
+	std::cout << "Free M_ALL: " << osGetMemRegionFree(MEMREGION_ALL) << "/" << osGetMemRegionSize(MEMREGION_ALL) << std::endl;
+	std::cout << "Free M_APP: " << osGetMemRegionFree(MEMREGION_APPLICATION) << "/" << osGetMemRegionSize(MEMREGION_APPLICATION) << std::endl;
+	std::cout << "Free M_SYS: " << osGetMemRegionFree(MEMREGION_SYSTEM) << "/" << osGetMemRegionSize(MEMREGION_SYSTEM) << std::endl;
+	std::cout << "Free M_BSE: " << osGetMemRegionFree(MEMREGION_BASE) << "/" << osGetMemRegionSize(MEMREGION_BASE) << std::endl;
+	std::cout << "Free M_LIN: " << linearSpaceFree() << "/" << Global.linearSpaceFree << std::endl;
+
+	//SleepInMs(5000);
+
 	Global.loadingState = 3;
 
 	Global.loadingState = 7;
 
 	Global.Path = lastPath;
 	Global.GameTextures = 1;
-	std::cout << "mark text for loading" << std::endl;
+	
 	startMusic = true;
 	stop = false;
 }
@@ -1436,24 +2050,50 @@ void GameManager::unloadGame(){
 	Global.GameTextures = -1;
 	
 	for(auto& pair : SoundFiles.data) {
-    	UnloadSound(pair.second);
+    	UnloadSound(&pair.second);
   	}
 
 	for(auto& pair : SoundFilesAll.data) {
-    	UnloadSound(pair.second);
+    	UnloadSound(&pair.second);
   	}
-
-	UnloadMusicStream(backgroundMusic);
-	free(musicData);
-
+	/*for(int i = objects.size()-1; i >= 0; i--){
+		destroyHitObject(i);
+	}*/
+	while(true){
+		if(objectsLinkedList.getHead() == NULL)
+			break;
+		((HitObject*)objectsLinkedList.getHead()->object)->deinit();
+		delete objectsLinkedList.getHead()->object;
+		objectsLinkedList.deleteHead();
+	}
+	while(true){
+		if(deadObjectsLinkedList.getHead() == NULL)
+			break;
+		((HitObject*)deadObjectsLinkedList.getHead()->object)->deinit();
+		delete deadObjectsLinkedList.getHead()->object;
+		deadObjectsLinkedList.deleteHead();
+	}
+	UnloadMusicStream(&backgroundMusic);
 	Global.numberLines = -1;
     Global.parsedLines = -1;
 
 	SoundFiles.data.clear();
 	SoundFiles.loaded.clear();
+
 	gameFile.hitObjects.clear();
-	objects.clear();
-	dead_objects.clear();
+	gameFile.timingPoints.clear();
+	gameFile.followPoints.clear();
+	gameFile.events.clear();
+	
+	gameFile.hitObjects = std::vector<HitObjectData>();
+	gameFile.timingPoints = std::vector<TimingPoint>();
+	gameFile.followPoints = std::vector<FollowPoint>();
+	gameFile.events = std::vector<Event>();
+
+
+	followLines.clear();
+
+	followLines = std::vector<FollowPoint>();
 }
 
 void GameManager::spawnHitObject(HitObjectData data){
@@ -1472,16 +2112,22 @@ void GameManager::spawnHitObject(HitObjectData data){
 		temp = new Circle(data);
 	}
 
-    objects.push_back(temp);
+	objectsLinkedList.insertTail((void*)temp);
+	//std::cout << " + size of linked list: " << objectsLinkedList.getSize() << std::endl;
+    //objects.push_back(temp);
 }
 
-void GameManager::destroyHitObject(int index){
+void GameManager::destroyHitObject(Node *node){
 	//declare a hitobject dead
-	dead_objects.push_back(objects[index]);
-	objects.erase(objects.begin()+index);
+	((HitObject*)node->object)->data.destruct = false;
+	//dead_objects.push_back((HitObject*)node->object);
+	deadObjectsLinkedList.insertTail((void*)node->object);
+	objectsLinkedList.deleteNodeUnsafe(node);
+	//std::cout << " - size of linked list: " << objectsLinkedList.getSize() << std::endl;
+	//objects.erase(objects.begin()+index);
 }
 
-void GameManager::destroyDeadHitObject(int index){
+void GameManager::destroyDeadHitObject(Node *node){
 	//somehow "kill" the "dead" object
 	/*if(dead_objects[index]->data.type == 2){
 		Slider* tempslider = dynamic_cast<Slider*>(dead_objects[index]);
@@ -1493,8 +2139,11 @@ void GameManager::destroyDeadHitObject(int index){
 		}
 	}*/
 	//else{
-		delete dead_objects[index];
-		dead_objects.erase(dead_objects.begin()+index);
+	((HitObject*)node->object)->deinit();
+	delete node->object;
+	deadObjectsLinkedList.deleteNodeUnsafe(node);
+	//delete dead_objects[index];
+	//dead_objects.erase(dead_objects.begin()+index);
 	//}
 }
 
@@ -1509,41 +2158,41 @@ void GameManager::render_combo(){
 }
 
 void GameManager::loadGameTextures(){
-	Image tempImage = LoadImage("resources/sliderin.png");
-	ImageColorReplace(&tempImage, {255,255,255,159}, {255,255,255,0});
-	sliderin = LoadTextureFromImage(tempImage);
-	UnloadImage(tempImage);
-
-	Image tempImage2 = GenImageGradientRadial(sliderin.width, sliderin.height, 0.1, {255,0,0,255}, {0,0,0,0});
-	sliderblank = LoadTexture("resources/SliderBlank.png");
-	sliderout = LoadTextureFromImage(tempImage2);
-	UnloadImage(tempImage2);
-    //sliderout = LoadTexture("resources/sliderout.png");
-	followPoint = LoadTexture("resources/followpoint.png");
+	//Image tempImage = LoadImage("sdmc:/3ds/resources/sliderin.png");
+	//ImageColorReplace(&tempImage, {255,255,255,159}, {255,255,255,0});
+	//sliderin = LoadTextureFromImage(tempImage);
+	//UnloadImage(tempImage);
+	std::cout << "loaded tempImage to memory done, press select to continue" << std::endl;
+	//Image tempImage2 = GenImageGradientRadial(sliderin.width, sliderin.height, 0.1, {255,0,0,255}, {0,0,0,0});
+	//sliderblank = LoadTexture("sdmc:/3ds/resources/SliderBlank.png");
+	//sliderout = LoadTexture("sdmc:/3ds/resources/SliderBlank.png");
+	//UnloadImage(tempImage2);
+    //sliderout = LoadTexture("sdmc:/3ds/resources/sliderout.png");
+	followPoint = LoadTexture("sdmc:/3ds/resources/followpoint.png");
     loadDefaultSkin(Global.selectedPath); // LOADING THE DEFAULT SKIN USING A SEPERATE FUNCTION
     loadGameSkin(Global.selectedPath); // LOADING THE GAME SKIN USING A SEPERATE FUNCTION
     if(!Global.settings.useDefaultSkin){
         loadBeatmapSkin(Global.selectedPath); // LOADING THE BEATMAP SKIN USING A SEPERATE FUNCTION
     }
-    SetTextureFilter(hit0, TEXTURE_FILTER_BILINEAR );
-    SetTextureFilter(hit50, TEXTURE_FILTER_BILINEAR );
-    SetTextureFilter(hit100, TEXTURE_FILTER_BILINEAR );
-    SetTextureFilter(hit300, TEXTURE_FILTER_BILINEAR );
-    SetTextureFilter(approachCircle, TEXTURE_FILTER_BILINEAR );
-    SetTextureFilter(selectCircle, TEXTURE_FILTER_BILINEAR );
-    SetTextureFilter(hitCircleOverlay, TEXTURE_FILTER_BILINEAR );
-    SetTextureFilter(hitCircle, TEXTURE_FILTER_BILINEAR );
-    SetTextureFilter(sliderb, TEXTURE_FILTER_BILINEAR );
+    SetTextureFilter(&hit0, TEXTURE_FILTER_BILINEAR );
+    SetTextureFilter(&hit50, TEXTURE_FILTER_BILINEAR );
+    SetTextureFilter(&hit100, TEXTURE_FILTER_BILINEAR );
+    SetTextureFilter(&hit300, TEXTURE_FILTER_BILINEAR );
+    SetTextureFilter(&approachCircle, TEXTURE_FILTER_BILINEAR );
+    SetTextureFilter(&selectCircle, TEXTURE_FILTER_BILINEAR );
+    SetTextureFilter(&hitCircleOverlay, TEXTURE_FILTER_BILINEAR );
+    SetTextureFilter(&hitCircle, TEXTURE_FILTER_BILINEAR );
+    SetTextureFilter(&sliderb, TEXTURE_FILTER_BILINEAR );
 
 
-    SetTextureFilter(sliderin, TEXTURE_FILTER_POINT);
-	SetTextureFilter(sliderblank, TEXTURE_FILTER_POINT);
-    SetTextureFilter(sliderout, TEXTURE_FILTER_POINT);
-    SetTextureFilter(sliderscorepoint, TEXTURE_FILTER_BILINEAR );
+    SetTextureFilter(&sliderin, TEXTURE_FILTER_POINT);
+	SetTextureFilter(&sliderblank, TEXTURE_FILTER_POINT);
+    SetTextureFilter(&sliderout, TEXTURE_FILTER_POINT);
+    SetTextureFilter(&sliderscorepoint, TEXTURE_FILTER_BILINEAR );
 
-    SetTextureFilter(reverseArrow, TEXTURE_FILTER_BILINEAR );
+    SetTextureFilter(&reverseArrow, TEXTURE_FILTER_BILINEAR );
     for(int i = 0; i < 10; i++){
-        SetTextureFilter(numbers[i], TEXTURE_FILTER_BILINEAR );  //OPENGL1.1 DOESNT SUPPORT THIS
+        SetTextureFilter(&numbers[i], TEXTURE_FILTER_BILINEAR );  //OPENGL1.1 DOESNT SUPPORT THIS
     }
 
     backgroundTextures.data.clear();
@@ -1594,56 +2243,83 @@ void GameManager::loadGameTextures(){
 					std::cout << "WHAT DA HEEEEEEEEEELLLLLLLLLLLLL" << std::endl;
 					Image image = LoadImage((Global.Path + files[i]).c_str());
 					//ImageColorBrightness(&image, -128);
-					ImageColorTint(&image, Color{30,30,30,255});
-					ImageBlurGaussian(&image, 2);
 					
-					backgroundTextures.data[gameFile.events[j].filename] = LoadTextureFromImage(image);
-					UnloadImage(image); 
+					int divider = 4;
+					while(true){
+						if(image.width / divider > 256 or image.height / divider > 128){
+							divider += 1;
+							std::cout << "TOO BIG OF AN IMAGE!" << std::endl;
+							std::cout << "RESIZING TO" << (int)(image.height / divider) << " x " << (int)(image.width / divider) << std::endl;
+						}
+						else{
+							break;
+						}
+					}
+					std::cout << "resize" << std::endl;
+					//SleepInMs(200);
+					int resizeW = (int)(image.width / divider);
+					int resizeH = (int)(image.height / divider);
+					ImageResize(&image, resizeW, resizeH);
+					std::cout << "T " << image.width << " " << image.height << std::endl;
+
+					ImageColorTint(&image, Color{30,30,30,255});
+					ImageBlurGaussian(&image, 0.3f);
+
+					backgroundTextures.data[gameFile.events[j].filename] = LoadTextureFromImage(&image);
+					UnloadImage(&image); 
 					
 					backgroundTextures.pos[gameFile.events[j].filename] = {gameFile.events[j].xOffset, gameFile.events[j].yOffset};
 					if(backgroundTextures.data[gameFile.events[j].filename].width != 0){
 						backgroundTextures.loaded[gameFile.events[j].filename].value = true;
 						std::cout << "Loaded: Background with filename: " << gameFile.events[j].filename << std::endl;
-						SetTextureFilter(backgroundTextures.data[gameFile.events[j].filename], TEXTURE_FILTER_BILINEAR );
+						SetTextureFilter(&backgroundTextures.data["gameFile.events[j].filename"], TEXTURE_FILTER_BILINEAR) ;
 					}
+					
+					//std::cout << "*. no backgroundss *.\n";
 				}
 			}
 		}
 	}
 
+
+	
+
+	//AAAAAAAAAAA
+
     Global.GameTextures = 0;
 }
+
 void GameManager::unloadGameTextures(){
 	std::cout << "UnloadingTextures" << std::endl;
     Global.GameTextures = 2;
-    UnloadTexture(hitCircleOverlay);
-    UnloadTexture(hitCircle);
-    UnloadTexture(sliderscorepoint);
-    UnloadTexture(approachCircle);
-    UnloadTexture(hit300);
-    UnloadTexture(hit100);
-    UnloadTexture(hit50);
-    UnloadTexture(hit0);
-    UnloadTexture(sliderb);
-    UnloadTexture(sliderin);
-	UnloadTexture(sliderblank);
-    UnloadTexture(sliderout);
-    UnloadTexture(selectCircle);
-    UnloadTexture(reverseArrow);
-    UnloadTexture(spinnerBottom);
-    UnloadTexture(spinnerTop);
-    UnloadTexture(spinnerCircle);
-    UnloadTexture(spinnerApproachCircle);
-    UnloadTexture(spinnerMetre);
-	UnloadTexture(followPoint);
+    UnloadTexture(&hitCircleOverlay);
+    UnloadTexture(&hitCircle);
+    UnloadTexture(&sliderscorepoint);
+    UnloadTexture(&approachCircle);
+    UnloadTexture(&hit300);
+    UnloadTexture(&hit100);
+    UnloadTexture(&hit50);
+    UnloadTexture(&hit0);
+    UnloadTexture(&sliderb);
+    UnloadTexture(&sliderin);
+	UnloadTexture(&sliderblank);
+    UnloadTexture(&sliderout);
+    UnloadTexture(&selectCircle);
+    UnloadTexture(&reverseArrow);
+    UnloadTexture(&spinnerBottom);
+    UnloadTexture(&spinnerTop);
+    UnloadTexture(&spinnerCircle);
+    UnloadTexture(&spinnerApproachCircle);
+    UnloadTexture(&spinnerMetre);
+	UnloadTexture(&followPoint);
     for(int i = 0; i < 10; i++){
-        UnloadTexture(numbers[i]);
+        UnloadTexture(&numbers[i]);
     }
     std::string key;
     for(std::map<std::string, Texture2D>::iterator it = backgroundTextures.data.begin(); it != backgroundTextures.data.end(); ++it){
         key = it->first;
         std::cout << "Removed: " << it->first << "\n";
-        UnloadTexture(backgroundTextures.data[key]);
+        UnloadTexture(&backgroundTextures.data[key]);
     }
 
     backgroundTextures.data.clear();
@@ -1733,9 +2409,8 @@ std::vector<Vector2> interpolate2(std::vector<Vector2> &coordinates, float lengt
     return result;
 }
 
-
-
-std::vector<int> GameManager::sliderPreInit(HitObjectData data){
+//std::vector<int> GameManager::sliderPreInit(HitObjectData data){
+int * GameManager::sliderPreInit(HitObjectData data){
     bool durationNull = false;
     double templength = data.length;
     if(data.length < 1){
@@ -1970,17 +2645,22 @@ std::vector<int> GameManager::sliderPreInit(HitObjectData data){
 		endTime = data.time;
 	}
 
-	std::vector<int> out;
-
+	//std::vector<int> out;
+	int *out = (int*)malloc(sizeof(int) * 3);
 	edgePoints.clear();
 	renderPoints.clear();
 
-	out.push_back(data.ex);
-	out.push_back(data.ey);
-	out.push_back(endTime);
-
+	//out.push_back(data.ex);
+	//out.push_back(data.ey);
+	//out.push_back(endTime);
+	out[0] = data.ex;
+	out[1] = data.ey;
+	out[2] = endTime;
     return out;
 }
+
+
+
 
 void GameManager::loadGameSounds(){
 	long long int loadedBytes = 0;
@@ -1990,17 +2670,21 @@ void GameManager::loadGameSounds(){
 	std::string last = Global.Path;
 	std::string dontTouch = gameFile.configGeneral["AudioFilename"];
 	Global.Path = GamePathWithSlash;
-	
+	std::cout << GamePathWithSlash << std::endl;
 	std::vector<std::string> ComboBreak = ls(".wav");
+	std::cout << ComboBreak.size() << std::endl;
+	std::cout << "first comcobreak ls done, press select to continue" << std::endl;
 	if(Global.settings.useDefaultSounds) ComboBreak.clear();
 	for(int i = 0; i < ComboBreak.size(); i++){
+		//std::cout << "loaded " << loadedBytes << " bytes" << std::endl;
+		//std::cout << ComboBreak[i] << std::endl;
+		if(ComboBreak[i][ComboBreak[i].size() - 1] == '/') continue;
+		SleepInUs(1*200*1000);
 		if(ComboBreak[i].rfind("combobreak", 0) == 0){
 			if(SoundFilesAll.loaded.count("combobreak") == 0 or SoundFilesAll.loaded["combobreak"].value == false){
 				SoundFilesAll.data["combobreak"] = LoadSound((GamePathWithSlash + ComboBreak[i]).c_str());
-				SoundFilesAll.loaded["combobreak"].value = IsSoundReady(SoundFilesAll.data["combobreak"]);
+				SoundFilesAll.loaded["combobreak"].value = IsSoundReady(&SoundFilesAll.data["combobreak"]);
 				if(SoundFilesAll.loaded["combobreak"].value){
-					std::filesystem::path p{Global.Path + ComboBreak[i]};
-					loadedBytes += std::filesystem::file_size(p);
 					std::cout << "loaded " << ComboBreak[i] << " from game" << std::endl;
 				}
 			}
@@ -2013,24 +2697,24 @@ void GameManager::loadGameSounds(){
 				}
 			}
 			SoundFilesAll.data[name] = LoadSound((GamePathWithSlash + ComboBreak[i]).c_str());
-			SoundFilesAll.loaded[name].value = IsSoundReady(SoundFilesAll.data[name]);
+			SoundFilesAll.loaded[name].value = IsSoundReady(&SoundFilesAll.data[name]);
 			if(SoundFilesAll.loaded[name].value){
-				std::filesystem::path p{Global.Path + ComboBreak[i]};
-				loadedBytes += std::filesystem::file_size(p);
 				std::cout << "loaded " << name << " from game" << std::endl;
 			}
 		}
+		
 	}
+	
+	//std::cout << "Done with all the waw stuff, press select to continue" << std::endl;
 	ComboBreak = ls(".ogg");
 	if(Global.settings.useDefaultSounds) ComboBreak.clear();
 	for(int i = 0; i < ComboBreak.size(); i++){
+		if(ComboBreak[i][ComboBreak[i].size() - 1] == '/') continue;
 		if(ComboBreak[i].rfind("combobreak", 0) == 0){
 			if(SoundFilesAll.loaded.count("combobreak") == 0 or SoundFilesAll.loaded["combobreak"].value == false){
 				SoundFilesAll.data["combobreak"] = LoadSound((GamePathWithSlash + ComboBreak[i]).c_str());
-				SoundFilesAll.loaded["combobreak"].value = IsSoundReady(SoundFilesAll.data["combobreak"]);
+				SoundFilesAll.loaded["combobreak"].value = IsSoundReady(&SoundFilesAll.data["combobreak"]);
 				if(SoundFilesAll.loaded["combobreak"].value){
-					std::filesystem::path p{Global.Path + ComboBreak[i]};
-					loadedBytes += std::filesystem::file_size(p);
 					std::cout << "loaded " << ComboBreak[i] << " from game" << std::endl;
 				}
 			}
@@ -2043,24 +2727,23 @@ void GameManager::loadGameSounds(){
 				}
 			}
 			SoundFilesAll.data[name] = LoadSound((GamePathWithSlash + ComboBreak[i]).c_str());
-			SoundFilesAll.loaded[name].value = IsSoundReady(SoundFilesAll.data[name]);
+			SoundFilesAll.loaded[name].value = IsSoundReady(&SoundFilesAll.data[name]);
 			if(SoundFilesAll.loaded[name].value){
-				std::filesystem::path p{Global.Path + ComboBreak[i]};
-				loadedBytes += std::filesystem::file_size(p);
 				std::cout << "loaded " << name << " from game" << std::endl;
 			}
 		}
 	}
+	
+	//std::cout << "Done with all the ogg stuff, press select to continue" << std::endl;
 	ComboBreak = ls(".mp3");
 	if(Global.settings.useDefaultSounds) ComboBreak.clear();
 	for(int i = 0; i < ComboBreak.size(); i++){
+		if(ComboBreak[i][ComboBreak[i].size() - 1] == '/') continue;
 		if(ComboBreak[i].rfind("combobreak", 0) == 0){
 			if(SoundFilesAll.loaded.count("combobreak") == 0 or SoundFilesAll.loaded["combobreak"].value == false){
 				SoundFilesAll.data["combobreak"] = LoadSound((GamePathWithSlash + ComboBreak[i]).c_str());
-				SoundFilesAll.loaded["combobreak"].value = IsSoundReady(SoundFilesAll.data["combobreak"]);
+				SoundFilesAll.loaded["combobreak"].value = IsSoundReady(&SoundFilesAll.data["combobreak"]);
 				if(SoundFilesAll.loaded["combobreak"].value){
-					std::filesystem::path p{Global.Path + ComboBreak[i]};
-					loadedBytes += std::filesystem::file_size(p);
 					std::cout << "loaded " << ComboBreak[i] << " from game" << std::endl;
 				}
 			}
@@ -2073,27 +2756,23 @@ void GameManager::loadGameSounds(){
 				}
 			}
 			SoundFilesAll.data[name] = LoadSound((GamePathWithSlash + ComboBreak[i]).c_str());
-			SoundFilesAll.loaded[name].value = IsSoundReady(SoundFilesAll.data[name]);
+			SoundFilesAll.loaded[name].value = IsSoundReady(&SoundFilesAll.data[name]);
 			if(SoundFilesAll.loaded[name].value){
-				std::filesystem::path p{Global.Path + ComboBreak[i]};
-				loadedBytes += std::filesystem::file_size(p);
 				std::cout << "loaded " << name << " from game" << std::endl;
 			}
 		}
 	}
 
-
-
-	Global.Path = "resources/skin/";
+	//std::cout << "Done with all the mp3 stuff, press select to continue" << std::endl;
+	Global.Path = "sdmc:/3ds/resources/skin/";
 	ComboBreak = ls(".wav");
 	for(int i = 0; i < ComboBreak.size(); i++){
+		if(ComboBreak[i][ComboBreak[i].size() - 1] == '/') continue;
 		if(ComboBreak[i].rfind("combobreak", 0) == 0){
 			if(SoundFilesAll.loaded.count("combobreak") == 0 or SoundFilesAll.loaded["combobreak"].value == false){
-				SoundFilesAll.data["combobreak"] = LoadSound(("resources/skin/" + ComboBreak[i]).c_str());
-				SoundFilesAll.loaded["combobreak"].value = IsSoundReady(SoundFilesAll.data["combobreak"]);
+				SoundFilesAll.data["combobreak"] = LoadSound(("sdmc:/3ds/resources/skin/" + ComboBreak[i]).c_str());
+				SoundFilesAll.loaded["combobreak"].value = IsSoundReady(&SoundFilesAll.data["combobreak"]);
 				if(SoundFilesAll.loaded["combobreak"].value){
-					std::filesystem::path p{Global.Path + ComboBreak[i]};
-					loadedBytes += std::filesystem::file_size(p);
 					std::cout << "loaded " << ComboBreak[i] << " from skin" << std::endl;
 				}
 			}
@@ -2102,8 +2781,8 @@ void GameManager::loadGameSounds(){
 			std::string name = ComboBreak[i].substr(0, ComboBreak[i].length() - 4);
 			while(std::isdigit(name[name.size() - 1])) name.pop_back();
 			if(SoundFilesAll.loaded.count(name) == 0 or SoundFilesAll.loaded[name].value == false){
-				SoundFilesAll.data[name] = LoadSound(("resources/skin/" + ComboBreak[i]).c_str());
-				SoundFilesAll.loaded[name].value = IsSoundReady(SoundFilesAll.data[name]);
+				SoundFilesAll.data[name] = LoadSound(("sdmc:/3ds/resources/skin/" + ComboBreak[i]).c_str());
+				SoundFilesAll.loaded[name].value = IsSoundReady(&SoundFilesAll.data[name]);
 				if(SoundFilesAll.loaded[name].value){
 					std::filesystem::path p{Global.Path + ComboBreak[i]};
 					loadedBytes += std::filesystem::file_size(p);
@@ -2112,15 +2791,16 @@ void GameManager::loadGameSounds(){
 			}
 		}
 	}
+
+	//std::cout << "Done with all the skinwaw stuff, press select to continue" << std::endl;
 	ComboBreak = ls(".ogg");
 	for(int i = 0; i < ComboBreak.size(); i++){
+		if(ComboBreak[i][ComboBreak[i].size() - 1] == '/') continue;
 		if(ComboBreak[i].rfind("combobreak", 0) == 0){
 			if(SoundFilesAll.loaded.count("combobreak") == 0 or SoundFilesAll.loaded["combobreak"].value == false){
-				SoundFilesAll.data["combobreak"] = LoadSound(("resources/skin/" + ComboBreak[i]).c_str());
-				SoundFilesAll.loaded["combobreak"].value = IsSoundReady(SoundFilesAll.data["combobreak"]);
+				SoundFilesAll.data["combobreak"] = LoadSound(("sdmc:/3ds/resources/skin/" + ComboBreak[i]).c_str());
+				SoundFilesAll.loaded["combobreak"].value = IsSoundReady(&SoundFilesAll.data["combobreak"]);
 				if(SoundFilesAll.loaded["combobreak"].value){
-					std::filesystem::path p{Global.Path + ComboBreak[i]};
-					loadedBytes += std::filesystem::file_size(p);
 					std::cout << "loaded " << ComboBreak[i] << " from skin" << std::endl;
 				}
 			}
@@ -2129,25 +2809,25 @@ void GameManager::loadGameSounds(){
 			std::string name = ComboBreak[i].substr(0, ComboBreak[i].length() - 4);
 			while(std::isdigit(name[name.size() - 1])) name.pop_back();
 			if(SoundFilesAll.loaded.count(name) == 0 or SoundFilesAll.loaded[name].value == false){
-				SoundFilesAll.data[name] = LoadSound(("resources/skin/" + ComboBreak[i]).c_str());
-				SoundFilesAll.loaded[name].value = IsSoundReady(SoundFilesAll.data[name]);
+				SoundFilesAll.data[name] = LoadSound(("sdmc:/3ds/resources/skin/" + ComboBreak[i]).c_str());
+				SoundFilesAll.loaded[name].value = IsSoundReady(&SoundFilesAll.data[name]);
 				if(SoundFilesAll.loaded[name].value){
-					std::filesystem::path p{Global.Path + ComboBreak[i]};
-					loadedBytes += std::filesystem::file_size(p);
 					std::cout << "loaded " << name << " from skin" << std::endl;
 				}
 			}
 		}
 	}
+
+	//std::cout << "Done with all the skinogg stuff, press select to continue" << std::endl;
+
 	ComboBreak = ls(".mp3");
 	for(int i = 0; i < ComboBreak.size(); i++){
+		if(ComboBreak[i][ComboBreak[i].size() - 1] == '/') continue;
 		if(ComboBreak[i].rfind("combobreak", 0) == 0){
 			if(SoundFilesAll.loaded.count("combobreak") == 0 or SoundFilesAll.loaded["combobreak"].value == false){
-				SoundFilesAll.data["combobreak"] = LoadSound(("resources/skin/" + ComboBreak[i]).c_str());
-				SoundFilesAll.loaded["combobreak"].value = IsSoundReady(SoundFilesAll.data["combobreak"]);
+				SoundFilesAll.data["combobreak"] = LoadSound(("sdmc:/3ds/resources/skin/" + ComboBreak[i]).c_str());
+				SoundFilesAll.loaded["combobreak"].value = IsSoundReady(&SoundFilesAll.data["combobreak"]);
 				if(SoundFilesAll.loaded["combobreak"].value){
-					std::filesystem::path p{Global.Path + ComboBreak[i]};
-					loadedBytes += std::filesystem::file_size(p);
 					std::cout << "loaded " << ComboBreak[i] << " from skin" << std::endl;
 				}
 			}
@@ -2156,29 +2836,27 @@ void GameManager::loadGameSounds(){
 			std::string name = ComboBreak[i].substr(0, ComboBreak[i].length() - 4);
 			while(std::isdigit(name[name.size() - 1])) name.pop_back();
 			if(SoundFilesAll.loaded.count(name) == 0 or SoundFilesAll.loaded[name].value == false){
-				SoundFilesAll.data[name] = LoadSound(("resources/skin/" + ComboBreak[i]).c_str());
-				SoundFilesAll.loaded[name].value = IsSoundReady(SoundFilesAll.data[name]);
+				SoundFilesAll.data[name] = LoadSound(("sdmc:/3ds/resources/skin/" + ComboBreak[i]).c_str());
+				SoundFilesAll.loaded[name].value = IsSoundReady(&SoundFilesAll.data[name]);
 				if(SoundFilesAll.loaded[name].value){
-					std::filesystem::path p{Global.Path + ComboBreak[i]};
-					loadedBytes += std::filesystem::file_size(p);
 					std::cout << "loaded " << name << " from skin" << std::endl;
 				}
 			}
 		}
 	}
 
+	//std::cout << "Done with all the skinmp3 stuff, press select to continue" << std::endl;
 
 
-	Global.Path = "resources/default_skin/";
+	Global.Path = "sdmc:/3ds/resources/default_skin/";
 	ComboBreak = ls(".wav");
 	for(int i = 0; i < ComboBreak.size(); i++){
+		if(ComboBreak[i][ComboBreak[i].size() - 1] == '/') continue;
 		if(ComboBreak[i].rfind("combobreak", 0) == 0){
 			if(SoundFilesAll.loaded.count("combobreak") == 0 or SoundFilesAll.loaded["combobreak"].value == false){
-				SoundFilesAll.data["combobreak"] = LoadSound(("resources/default_skin/" + ComboBreak[i]).c_str());
-				SoundFilesAll.loaded["combobreak"].value = IsSoundReady(SoundFilesAll.data["combobreak"]);
+				SoundFilesAll.data["combobreak"] = LoadSound(("sdmc:/3ds/resources/default_skin/" + ComboBreak[i]).c_str());
+				SoundFilesAll.loaded["combobreak"].value = IsSoundReady(&SoundFilesAll.data["combobreak"]);
 				if(SoundFilesAll.loaded["combobreak"].value){
-					std::filesystem::path p{Global.Path + ComboBreak[i]};
-					loadedBytes += std::filesystem::file_size(p);
 					std::cout << "loaded " << ComboBreak[i] << " from default skin" << std::endl;
 				}
 			}
@@ -2187,25 +2865,23 @@ void GameManager::loadGameSounds(){
 			std::string name = ComboBreak[i].substr(0, ComboBreak[i].length() - 4);
 			while(std::isdigit(name[name.size() - 1])) name.pop_back();
 			if(SoundFilesAll.loaded.count(name) == 0 or SoundFilesAll.loaded[name].value == false){
-				SoundFilesAll.data[name] = LoadSound(("resources/default_skin/" + ComboBreak[i]).c_str());
-				SoundFilesAll.loaded[name].value = IsSoundReady(SoundFilesAll.data[name]);
+				SoundFilesAll.data[name] = LoadSound(("sdmc:/3ds/resources/default_skin/" + ComboBreak[i]).c_str());
+				SoundFilesAll.loaded[name].value = IsSoundReady(&SoundFilesAll.data[name]);
 				if(SoundFilesAll.loaded[name].value){
-					std::filesystem::path p{Global.Path + ComboBreak[i]};
-					loadedBytes += std::filesystem::file_size(p);
 					std::cout << "loaded " << name << " from default skin" << std::endl;
 				}
 			}
 		}
 	}
+	//std::cout << "Done with all the dskinwaw stuff, press select to continue" << std::endl;
 	ComboBreak = ls(".ogg");
 	for(int i = 0; i < ComboBreak.size(); i++){
+		if(ComboBreak[i][ComboBreak[i].size() - 1] == '/') continue;
 		if(ComboBreak[i].rfind("combobreak", 0) == 0){
 			if(SoundFilesAll.loaded.count("combobreak") == 0 or SoundFilesAll.loaded["combobreak"].value == false){
-				SoundFilesAll.data["combobreak"] = LoadSound(("resources/default_skin/" + ComboBreak[i]).c_str());
-				SoundFilesAll.loaded["combobreak"].value = IsSoundReady(SoundFilesAll.data["combobreak"]);
+				SoundFilesAll.data["combobreak"] = LoadSound(("sdmc:/3ds/resources/default_skin/" + ComboBreak[i]).c_str());
+				SoundFilesAll.loaded["combobreak"].value = IsSoundReady(&SoundFilesAll.data["combobreak"]);
 				if(SoundFilesAll.loaded["combobreak"].value){
-					std::filesystem::path p{Global.Path + ComboBreak[i]};
-					loadedBytes += std::filesystem::file_size(p);
 					std::cout << "loaded " << ComboBreak[i] << " from default skin" << std::endl;
 				}
 			}
@@ -2214,25 +2890,23 @@ void GameManager::loadGameSounds(){
 			std::string name = ComboBreak[i].substr(0, ComboBreak[i].length() - 4);
 			while(std::isdigit(name[name.size() - 1])) name.pop_back();
 			if(SoundFilesAll.loaded.count(name) == 0 or SoundFilesAll.loaded[name].value == false){
-				SoundFilesAll.data[name] = LoadSound(("resources/default_skin/" + ComboBreak[i]).c_str());
-				SoundFilesAll.loaded[name].value = IsSoundReady(SoundFilesAll.data[name]);
+				SoundFilesAll.data[name] = LoadSound(("sdmc:/3ds/resources/default_skin/" + ComboBreak[i]).c_str());
+				SoundFilesAll.loaded[name].value = IsSoundReady(&SoundFilesAll.data[name]);
 				if(SoundFilesAll.loaded[name].value){
-					std::filesystem::path p{Global.Path + ComboBreak[i]};
-					loadedBytes += std::filesystem::file_size(p);
 					std::cout << "loaded " << name << " from default skin" << std::endl;
 				}
 			}
 		}
 	}
+	//std::cout << "Done with all the dskinogg stuff, press select to continue" << std::endl;
 	ComboBreak = ls(".mp3");
 	for(int i = 0; i < ComboBreak.size(); i++){
+		if(ComboBreak[i][ComboBreak[i].size() - 1] == '/') continue;
 		if(ComboBreak[i].rfind("combobreak", 0) == 0){
 			if(SoundFilesAll.loaded.count("combobreak") == 0 or SoundFilesAll.loaded["combobreak"].value == false){
-				SoundFilesAll.data["combobreak"] = LoadSound(("resources/default_skin/" + ComboBreak[i]).c_str());
-				SoundFilesAll.loaded["combobreak"].value = IsSoundReady(SoundFilesAll.data["combobreak"]);
+				SoundFilesAll.data["combobreak"] = LoadSound(("sdmc:/3ds/resources/default_skin/" + ComboBreak[i]).c_str());
+				SoundFilesAll.loaded["combobreak"].value = IsSoundReady(&SoundFilesAll.data["combobreak"]);
 				if(SoundFilesAll.loaded["combobreak"].value){
-					std::filesystem::path p{Global.Path + ComboBreak[i]};
-					loadedBytes += std::filesystem::file_size(p);
 					std::cout << "loaded " << ComboBreak[i] << " from default skin" << std::endl;
 				}
 			}
@@ -2241,24 +2915,23 @@ void GameManager::loadGameSounds(){
 			std::string name = ComboBreak[i].substr(0, ComboBreak[i].length() - 4);
 			while(std::isdigit(name[name.size() - 1])) name.pop_back();
 			if(SoundFilesAll.loaded.count(name) == 0 or SoundFilesAll.loaded[name].value == false){
-				SoundFilesAll.data[name] = LoadSound(("resources/default_skin/" + ComboBreak[i]).c_str());
-				SoundFilesAll.loaded[name].value = IsSoundReady(SoundFilesAll.data[name]);
+				SoundFilesAll.data[name] = LoadSound(("sdmc:/3ds/resources/default_skin/" + ComboBreak[i]).c_str());
+				SoundFilesAll.loaded[name].value = IsSoundReady(&SoundFilesAll.data[name]);
 				if(SoundFilesAll.loaded[name].value){
-					std::filesystem::path p{Global.Path + ComboBreak[i]};
-					loadedBytes += std::filesystem::file_size(p);
 					std::cout << "loaded " << name << " from default skin" << std::endl;
 				}
 			}
 		}
 	}
+
 
 
 
 	//gameFile.configGeneral["AudioFilename"]
 
 
-	/*SetSoundVolume(SoundFilesAll.data["combobreak"], 1.0f);
-	PlaySound(SoundFilesAll.data["combobreak"]);*/
+	/*SetSoundVolume(&SoundFilesAll.data["combobreak"], 1.0f);
+	PlaySound(&SoundFilesAll.data["combobreak"]);*/
 	std::cout << "loaded " << loadedBytes / 1024 << "KB of sound data" << std::endl;
 	Global.Path = last;
 	

@@ -7,9 +7,11 @@
 #include "gamemanager.hpp"
 #include <thread>
 #include <functional>
-#include "SDL2/SDL.h"
+#include <3ds.h>
+#include "SDL/SDL.h"
 #include <mutex>
-
+#include <cstdint>
+#include "raylibDefinitions.h"
 #define PLATFORM_DESKTOP
 
 #if defined(PLATFORM_DESKTOP)
@@ -37,10 +39,10 @@ struct InputHandler {
 
 class State;
 struct TextureSizes{
-    int hitCircle = 128;
-    int comboNumber = 140;
-    int hitCircleOverlay = 128;
-    int approachCircle = 128;
+    int hitCircle = 64;
+    int comboNumber = 110;
+    int hitCircleOverlay = 64;
+    int approachCircle = 64;
     bool render300 = false;
 };
 
@@ -57,8 +59,8 @@ struct Globals {
     //Color Background = {42,22,33,255};
     int skinNumberOverlap = 18;
     double FPS = 4.0f * 100.0f;
-    int Width = 640;
-    int Height = 480;
+    int Width = 400;
+    int Height = 240;
     float offset = 45.0f;
 
     struct timespec ts1 = timespec{0,0}, ts2 = timespec{0,0};
@@ -90,21 +92,25 @@ struct Globals {
     double AutoMouseStartTime;
     bool useAuto = false;
 
+    //float audioSecondsElapsed = 0.0f;
+    //bool audioPlaying = false;
     Font DefaultFont;
 
-    std::string Path = std::filesystem::current_path().string();
-    std::string BeatmapLocation = "C:/Users/renot/AppData/Local/osu!/Songs"; //std::filesystem::current_path().string() + "/beatmaps";
-    std::string GamePath = std::filesystem::current_path().string();
-    std::string selectedPath = "";
-    std::string CurrentLocation = std::filesystem::current_path().string();
+    std::string Path = "sdmc:/3ds";//std::filesystem::current_path().string();
+    std::string BeatmapLocation = "sdmc:/3ds/beatmaps";
+    std::string GamePath = "sdmc:/3ds";//std::filesystem::current_path().string();
+    std::string selectedPath = "sdmc:/3ds";
+    std::string CurrentLocation = "sdmc:/3ds";
+
+
     int MouseTrailSize = 150;
 
     float FrameTimeCounterWheel = 0.f;
 
     Texture2D OsusLogo;
 
-    double volume = 0.4f;
-    double hitVolume = 0.7f;
+    double volume = 1.0f;
+    double hitVolume = 1.0f;
     bool volumeChanged = true;
 
     bool Key1P = false;
@@ -127,9 +133,9 @@ struct Globals {
 
     Globals() = default;
 
-    float sliderTexSize = 1.0f;
-    int circleSector = 16;
-    bool legacyRender = false;
+    float sliderTexSize = 0.6f;
+    int circleSector = 8;
+    static const bool legacyRender = true;
 
     long long errorSum = 0;
     long long errorLast = 0;
@@ -153,7 +159,6 @@ struct Globals {
 
     int loadingState = 0;
 
-    SDL_Window* win;
     bool quit = false;
 
     TextureSizes textureSize;
@@ -162,7 +167,35 @@ struct Globals {
     bool renderFrame;
     std::mutex mutex;
 
+    LightLock lightlock;
+
+
     GameSettings settings;
+
+    bool useTopScreen = false;
+    bool touchScreenTouchEnabled = true;
+
+    touchPosition touch;
+    bool lastTouch = false;
+
+    C3D_RenderTarget* window;
+    C3D_RenderTarget* gpu_currentRenderTarget;
+    
+    u32 ds_kDown = 0;
+    u32 ds_kHeld = 0;
+    u32 ds_kUp = 0;
+
+    u64 totalNumOfSamples = 0;
+    
+    bool sliderTexNeedDeleting = false;
+    u32 linearSpaceFree = 0;
+
+    bool MusicLoaded = false;
+
+    bool channelOccupied[24];
+    std::vector<Sound *> soundAtChannel;
+
+    bool stop = false;
 };
 
 extern Globals Global;

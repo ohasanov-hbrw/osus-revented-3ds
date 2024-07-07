@@ -3,6 +3,7 @@ bin
 build
 object
 beatmaps
+resources
 
 # Prerequisites
 *.d

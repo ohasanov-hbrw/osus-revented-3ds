@@ -18,20 +18,22 @@ PlayMenu::PlayMenu() {
     close = Button({70, 110}, {20,20}, {255,135,198,255}, "x", BLACK, 15);
     skin = Switch({310,350}, {40,20}, RED, GREEN, {255,135,198,255}, BLACK);
     sound = Switch({310,370}, {40,20}, RED, GREEN, {255,135,198,255}, BLACK);
-    usedskin = TextBox({200,350}, {150,20}, {240,98,161,255}, "Use default skin", WHITE, 10, 50);
-    usedsound = TextBox({200,370}, {150,20}, {240,98,161,255}, "Use default sound", WHITE, 10, 50);
+    usedskin = TextBox({190,350}, {170,20}, {240,98,161,255}, "Use default skin", WHITE, 12, 50);
+    usedsound = TextBox({190,370}, {170,20}, {240,98,161,255}, "Use default sound", WHITE, 12, 50);
     skin.state = Global.settings.useDefaultSkin;
     sound.state = Global.settings.useDefaultSounds;
 }
 
 void PlayMenu::init() {
+    std::cout << "loading the playmenu/n";
     Global.NeedForBackgroundClear = true;
     Global.useAuto = false;
     Global.LastFrameTime = getTimer();
     temp = Global.Path;
     Global.Path = Global.BeatmapLocation;
-    auto dir = ls(".osu");
-    dir_list = SelectableList({320, 260}, {520, 150}, {255,135,198,255}, dir, BLACK, 10, 15, 65);
+
+    std::vector<std::string> dir = ls(".osu");
+    dir_list = SelectableList({320, 250}, {520, 160}, {255,135,198,255}, dir, BLACK, 15, 20, 65);
 }
 void PlayMenu::render() {
     //Global.mutex.lock();
@@ -201,15 +203,19 @@ void MainMenu::update() {
     load.update();
     //test.update();
     if(wip.action){
-        Global.CurrentState->unload();
-        Global.CurrentState.reset(new WIPMenu());
-        Global.CurrentState->init();
+        //Global.CurrentState->unload();
+        //Global.CurrentState.reset(new WIPMenu());
+        //Global.CurrentState->init();
         return;
     }
     else if(play.action){
+        std::cout << "play.action unload" << std::endl;
         Global.CurrentState->unload();
+        std::cout << "play.action reset" << std::endl;
         Global.CurrentState.reset(new PlayMenu());
+        std::cout << "play.action init" << std::endl;
         Global.CurrentState->init();
+        std::cout << "play.action done" << std::endl;
         return;
     }
     else if(load.action){
@@ -219,7 +225,7 @@ void MainMenu::update() {
         return;
     }
 
-    if(IsKeyDown(SDL_SCANCODE_LALT ))
+    if(IsKeyDown(KEY_SELECT ))
         volume.update();
     float lastVolume = Global.volume;
     Global.volume = volume.location / 100.0f;
@@ -230,18 +236,19 @@ void MainMenu::update() {
 }
 void MainMenu::render() {
     //Global.mutex.lock();
-    DrawTextureCenter(Global.OsusLogo, 320, 200, 1/3.f, WHITE);
+    DrawTextureCenter(&Global.OsusLogo, 320, 200, 400.0 / (float)Global.OsusLogo.width, WHITE);
     play.render();
     wip.render();
     load.render();
-    if(IsKeyDown(SDL_SCANCODE_LALT ))
+    
+    if(IsKeyDown(KEY_SELECT ))
         volume.render();
     //test.render();
     //Global.mutex.unlock();
 }
 
 void MainMenu::unload() {
-
+    //NEED FIXING>>> UNLOADING DOESNT STOP RENDEWRING
 }
 
 Game::Game() {
@@ -253,15 +260,33 @@ void Game::init() {
     initDone = 0;
     Global.LastFrameTime = getTimer();
     std::cout << Global.selectedPath << std::endl;
+    std::cout << "Press select to load game" << std::endl;
+    while(false){
+        PollInputEvents();
+        if(IsKeyDown(KEY_SELECT)){
+            while(true){
+                PollInputEvents();
+                if(!IsKeyDown(KEY_SELECT)){
+                    break;
+                }
+                svcSleepThread(10000);
+            }
+            break;
+        }
+        svcSleepThread(10000);
+    }
     Global.numberLines = 0;
     Global.parsedLines = 0;
     Global.loadingState = 0;
     initDone = -2;
     initStartTime = getTimer();
     Global.mutex.unlock();
+    //LightLock_Unlock(&Global.lightlock);
     Global.gameManager->loadGame(Global.selectedPath);
+
     Global.gameManager->timingSettingsForHitObject.clear();
     Global.mutex.lock();
+    //LightLock_Lock(&Global.lightlock);
     Global.startTime = -5000.0f;
     Global.errorSum = 0;
     Global.errorLast = 0;
@@ -269,14 +294,14 @@ void Game::init() {
 
     volume.location = Global.volume * 100.0f;
     std::cout << volume.location << std::endl;
-    std::cout << "done init" << std::endl;
+    std::cout << "done init, press select to continue" << std::endl;
+
 }
 void Game::update() {
     if(initDone == 1){
-        Global.enableMouse = false;
+        //Global.enableMouse = false;
         Global.gameManager->run();
-        if(IsKeyPressed(SDL_SCANCODE_BACKSPACE )){
-            Global.gameManager->unloadGame();
+        if(IsKeyPressed(KEY_B)){
             Global.CurrentState->unload();
             Global.CurrentState.reset(new PlayMenu());
             Global.CurrentState->init();
@@ -292,7 +317,7 @@ void Game::update() {
             initDone = true;
         }
     }
-    if(IsKeyDown(SDL_SCANCODE_LALT ))
+    if(IsKeyDown(KEY_SELECT ))
         volume.update();
     float lastVolume = Global.volume;
     Global.volume = volume.location / 100.0f;
@@ -304,22 +329,22 @@ void Game::update() {
 void Game::render() {
     
     if(initDone == 1){
-        Global.enableMouse = false;
+        //Global.enableMouse = false;
         Global.gameManager->render();
         //Global.mutex.lock();
-        if(IsMusicStreamPlaying(Global.gameManager->backgroundMusic)){
-            DrawTextEx(Global.DefaultFont, TextFormat("Playing: %.3f/%.3f", (Global.currentOsuTime/1000.0), GetMusicTimeLength(Global.gameManager->backgroundMusic)), {ScaleCordX(5), ScaleCordY(15)}, Scale(10) , Scale(1), WHITE);
+        if(IsMusicStreamPlaying(&Global.gameManager->backgroundMusic)){
+            DrawTextEx(&Global.DefaultFont, TextFormat("Playing: %.3f/%.3f", (Global.currentOsuTime/1000.0), GetMusicTimeLength(&Global.gameManager->backgroundMusic)), {ScaleCordX(5), ScaleCordY(15)}, Scale(10) , Scale(1), WHITE);
             //DrawTextEx(Global.DefaultFont, TextFormat("Timer: %.3f ms", getTimer()), {ScaleCordX(5), ScaleCordY(55)}, Scale(10) , Scale(1), WHITE);
             //DrawTextEx(Global.DefaultFont, TextFormat("Last Error: %.3f ms", Global.errorLast/1000.0f), {ScaleCordX(5), ScaleCordY(65)}, Scale(10) , Scale(1), WHITE);
             //DrawTextEx(Global.DefaultFont, TextFormat("Avg Time Difference in the First Second: %.3f ms", Global.avgTime), {ScaleCordX(5), ScaleCordY(75)}, Scale(10) , Scale(1), WHITE);
         }
         else{
-            DrawTextEx(Global.DefaultFont, TextFormat("Paused: %.3f/%.3f", GetMusicTimePlayed(Global.gameManager->backgroundMusic) * 1000000.0f, GetMusicTimeLength(Global.gameManager->backgroundMusic)), {ScaleCordX(5), ScaleCordY(15)}, Scale(10) , Scale(1), WHITE);
+            DrawTextEx(&Global.DefaultFont, TextFormat("Paused: %.3f/%.3f", GetMusicTimePlayed(&Global.gameManager->backgroundMusic) * 1000000.0f, GetMusicTimeLength(&Global.gameManager->backgroundMusic)), {ScaleCordX(5), ScaleCordY(15)}, Scale(10) , Scale(1), WHITE);
             if(Global.errorDiv != 0)
-                DrawTextEx(Global.DefaultFont, TextFormat("Error Avg: %ld ms", (Global.errorSum/Global.errorDiv)/1000), {ScaleCordX(5), ScaleCordY(40)}, Scale(15) , Scale(1), WHITE);
+                DrawTextEx(&Global.DefaultFont, TextFormat("Error Avg: %ld ms", (Global.errorSum/Global.errorDiv)/1000), {ScaleCordX(5), ScaleCordY(40)}, Scale(15) , Scale(1), WHITE);
         }
-        if(GetMusicTimeLength(Global.gameManager->backgroundMusic) != 0){
-            DrawLineEx({0, GetScreenHeight() - Scale(2)}, {GetScreenWidth() * ((Global.currentOsuTime/1000.0) / GetMusicTimeLength(Global.gameManager->backgroundMusic)), GetScreenHeight() - Scale(2)}, Scale(3), Fade(WHITE, 0.8));
+        if(GetMusicTimeLength(&Global.gameManager->backgroundMusic) != 0){
+            DrawLineEx({0, GetScreenHeight() - Scale(2)}, {GetScreenWidth() * ((Global.currentOsuTime/1000.0) / GetMusicTimeLength(&Global.gameManager->backgroundMusic)), GetScreenHeight() - Scale(2)}, Scale(3), Fade(WHITE, 0.8));
         }
         //Global.mutex.unlock();
     }
@@ -338,7 +363,7 @@ void Game::render() {
         DrawRectangle(ScaleCordX(580), ScaleCordY(450), Scale(20), Scale(20),(Color) {0, (unsigned char)(255 * (int)Global.Key1P), (unsigned char)(255 * (int)Global.Key1D), 100});
         DrawRectangle(ScaleCordX(610), ScaleCordY(450), Scale(20), Scale(20), (Color){0, (unsigned char)(255 * (int)Global.Key2P), (unsigned char)(255 * (int)Global.Key2D), 100});
         //Global.mutex.lock();
-        DrawTextEx(Global.DefaultFont, message.c_str(), {ScaleCordX(320 - message.size() * 7.5f), ScaleCordY(220)}, Scale(20), Scale(1), WHITE);
+        DrawTextEx(&Global.DefaultFont, message.c_str(), {ScaleCordX(320 - message.size() * 7.5f), ScaleCordY(220)}, Scale(20), Scale(1), WHITE);
         //Global.mutex.unlock();
     }
     else if(initDone == -2){
@@ -371,14 +396,15 @@ void Game::render() {
         else if(Global.loadingState == 7){
             message = "Loading Textures";
         }
-        DrawTextEx(Global.DefaultFont, message.c_str(), {ScaleCordX(320 - message.size() * 7.5f), ScaleCordY(220)}, Scale(20), Scale(1), WHITE);
+        DrawTextEx(&Global.DefaultFont, message.c_str(), {ScaleCordX(320 - message.size() * 7.5f), ScaleCordY(220)}, Scale(20), Scale(1), WHITE);
         //Global.mutex.unlock();
     }
-    if(IsKeyDown(SDL_SCANCODE_LALT ))
+    if(IsKeyDown(KEY_SELECT ))
         volume.render();
 }
 
 void Game::unload(){
+    Global.gameManager->unloadGame();
     Global.NeedForBackgroundClear = true;
 }
 
@@ -405,8 +431,8 @@ void WIPMenu::init(){
     logo = LoadTexture("resources/osus.png");
     menu = LoadTexture("resources/menu.png");
     back = LoadTexture("resources/metadata.png");
-	SetTextureFilter(logo, TEXTURE_FILTER_BILINEAR );
-    SetTextureFilter(back, TEXTURE_FILTER_BILINEAR );
+	SetTextureFilter(&logo, TEXTURE_FILTER_BILINEAR );
+    SetTextureFilter(&back, TEXTURE_FILTER_BILINEAR );
     float time = 0.2f;
     while(time <= 1.0f){
         time += Global.FrameTime / 1000.0f;
@@ -418,7 +444,8 @@ void WIPMenu::init(){
         GetKeys();
         updateMouseTrail();
         updateUpDown();
-        BeginDrawing();
+        C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
+        C2D_SceneBegin(Global.window);
         ClearBackground(Global.Background);
         int index = 0;
         float tempangle = angle;
@@ -453,17 +480,18 @@ void WIPMenu::init(){
             Color temp = WHITE;
             if(dir[dirNum] != "Back" and dir[dirNum][dir[dirNum].size() - 1] != '/')
                 temp = {255,135,198,255};
-            DrawTextureOnCircle(menu, 800, 240, 300*weirdSmooth, 0.4f, 0, tempAngle2 - 180.0f, temp);
+            DrawTextureOnCircle(&menu, 800, 240, 300*weirdSmooth, 0.4f, 0, tempAngle2 - 180.0f, temp);
             DrawTextLeft((dir[dirNum]).c_str(), textpos.x, textpos.y, 9, WHITE);
             DrawTextLeft((std::to_string((tempindex + index + dir.size() + offset) % dir.size() + 1) + " out of " + std::to_string(dir.size())).c_str(), textpos.x, textpos.y + 15*weirdSmooth, 7, WHITE);
         }
-        DrawTextureRotate(logo, 800, 240, 0.5f, angle, WHITE);
+        DrawTextureRotate(&logo, 800, 240, 0.5f, angle, WHITE);
 
         DrawRectangle(ScaleCordX(580), ScaleCordY(450), Scale(20), Scale(20),(Color) {0, (unsigned char)(255 * (int)Global.Key1P), (unsigned char)(255 * (int)Global.Key1D), 100});
         DrawRectangle(ScaleCordX(610), ScaleCordY(450), Scale(20), Scale(20), (Color){0, (unsigned char)(255 * (int)Global.Key2P), (unsigned char)(255 * (int)Global.Key2D), 100});
         renderMouse();
-        DrawTextEx(Global.DefaultFont, TextFormat("FPS: %d",  GetFPS()), {ScaleCordX(5), ScaleCordY(5)}, Scale(15), Scale(1), GREEN);
-        EndDrawing();
+        DrawTextEx(&Global.DefaultFont, TextFormat("FPS: %d",  GetFPS()), {ScaleCordX(5), ScaleCordY(5)}, Scale(15), Scale(1), GREEN);
+        C2D_Flush();  //test
+        C3D_FrameEnd(0);
     }
     applyMouse = true;
 	//SetTextureFilter(menu, TEXTURE_FILTER_BILINEAR );
@@ -504,12 +532,12 @@ void WIPMenu::render(){
         Color temp = WHITE;
         if(dir[dirNum] != "Back" and dir[dirNum][dir[dirNum].size() - 1] != '/')
             temp = {255,135,198,255};
-        DrawTextureOnCircle(menu, 800, 240, 300, 0.4f, 0, tempAngle2 - 180.0f, temp);
+        DrawTextureOnCircle(&menu, 800, 240, 300, 0.4f, 0, tempAngle2 - 180.0f, temp);
         DrawTextLeft((dir[dirNum]).c_str(), textpos.x, textpos.y, 9, WHITE);
         DrawTextLeft((std::to_string((tempindex + index + dir.size() + offset) % dir.size() + 1) + " out of " + std::to_string(dir.size())).c_str(), textpos.x, textpos.y + 15, 7, WHITE);
     }
     
-    DrawTextureCenter(back, 145, 240, 0.45f, Color{255,255,255,255 * easeInOutCubic(animtime)});
+    DrawTextureCenter(&back, 145, 240, 0.45f, Color{255,255,255,255 * easeInOutCubic(animtime)});
     if(TempMeta.size() == 5){
         DrawTextLeft((TempMeta[0]).c_str(), 25, 55, 9, Color{255,255,255,255 * easeInOutCubic(animtime)});
         DrawTextLeft((TempMeta[1]).c_str(), 25, 70, 9, Color{255,255,255,255 * easeInOutCubic(animtime)});
@@ -518,7 +546,7 @@ void WIPMenu::render(){
         DrawTextLeft((TempMeta[4]).c_str(), 25, 115, 9, Color{255,255,255,255 * easeInOutCubic(animtime)});
     }
 
-    DrawTextureRotate(logo, 800, 240, 0.5f, angle, WHITE);
+    DrawTextureRotate(&logo, 800, 240, 0.5f, angle, WHITE);
     //Global.mutex.unlock();
 }
 void WIPMenu::update(){
@@ -598,7 +626,8 @@ void WIPMenu::update(){
                     GetKeys();
                     updateMouseTrail();
                     updateUpDown();
-                    BeginDrawing();
+                    C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
+                    C2D_SceneBegin(Global.window);
                     ClearBackground(Global.Background);
                     int index = 0;
                     float tempangle = angle;
@@ -634,17 +663,18 @@ void WIPMenu::update(){
                         Color temp = WHITE;
                         if(dir[dirNum] != "Back" and dir[dirNum][dir[dirNum].size() - 1] != '/')
                             temp = {255,135,198,255};
-                        DrawTextureOnCircle(menu, 800, 240, 300*weirdSmooth, 0.4f, 0, tempAngle2 - 180.0f, temp);
+                        DrawTextureOnCircle(&menu, 800, 240, 300*weirdSmooth, 0.4f, 0, tempAngle2 - 180.0f, temp);
                         DrawTextLeft((dir[dirNum]).c_str(), textpos.x, textpos.y, 9, WHITE);
                         DrawTextLeft((std::to_string((tempindex + index + dir.size() + offset) % dir.size() + 1) + " out of " + std::to_string(dir.size())).c_str(), textpos.x, textpos.y + 15*weirdSmooth, 7, WHITE);
                     }
-                    DrawTextureRotate(logo, 800, 240, 0.5f, angle, WHITE);
+                    DrawTextureRotate(&logo, 800, 240, 0.5f, angle, WHITE);
 
                     DrawRectangle(ScaleCordX(580), ScaleCordY(450), Scale(20), Scale(20),(Color) {0, (unsigned char)(255 * (int)Global.Key1P), (unsigned char)(255 * (int)Global.Key1D), 100});
                     DrawRectangle(ScaleCordX(610), ScaleCordY(450), Scale(20), Scale(20), (Color){0, (unsigned char)(255 * (int)Global.Key2P), (unsigned char)(255 * (int)Global.Key2D), 100});
                     renderMouse();
-                    DrawTextEx(Global.DefaultFont, TextFormat("FPS: %d",  GetFPS()), {ScaleCordX(5), ScaleCordY(5)}, Scale(15), Scale(1), GREEN);
-                    EndDrawing();
+                    DrawTextEx(&Global.DefaultFont, TextFormat("FPS: %d",  GetFPS()), {ScaleCordX(5), ScaleCordY(5)}, Scale(15), Scale(1), GREEN);
+                    C2D_Flush();  //test
+                    C3D_FrameEnd(0);
                 }
                 applyMouse = true;
                 init();
@@ -672,7 +702,8 @@ void WIPMenu::update(){
                     GetKeys();
                     updateMouseTrail();
                     updateUpDown();
-                    BeginDrawing();
+                    C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
+                    C2D_SceneBegin(Global.window);
                     ClearBackground(Global.Background);
                     int index = 0;
                     float tempangle = angle;
@@ -707,17 +738,18 @@ void WIPMenu::update(){
                         Color temp = WHITE;
                         if(dir[dirNum] != "Back" and dir[dirNum][dir[dirNum].size() - 1] != '/')
                             temp = {255,135,198,255};
-                        DrawTextureOnCircle(menu, 800, 240, 300*weirdSmooth, 0.4f, 0, tempAngle2 - 180.0f, temp);
+                        DrawTextureOnCircle(&menu, 800, 240, 300*weirdSmooth, 0.4f, 0, tempAngle2 - 180.0f, temp);
                         DrawTextLeft((dir[dirNum]).c_str(), textpos.x, textpos.y, 9, WHITE);
                         DrawTextLeft((std::to_string((tempindex + index + dir.size() + offset) % dir.size() + 1) + " out of " + std::to_string(dir.size())).c_str(), textpos.x, textpos.y + 15*weirdSmooth, 7, WHITE);
                     }
-                    DrawTextureRotate(logo, 800, 240, 0.5f, angle, WHITE);
+                    DrawTextureRotate(&logo, 800, 240, 0.5f, angle, WHITE);
 
                     DrawRectangle(ScaleCordX(580), ScaleCordY(450), Scale(20), Scale(20),(Color) {0, (unsigned char)(255 * (int)Global.Key1P), (unsigned char)(255 * (int)Global.Key1D), 100});
                     DrawRectangle(ScaleCordX(610), ScaleCordY(450), Scale(20), Scale(20), (Color){0, (unsigned char)(255 * (int)Global.Key2P), (unsigned char)(255 * (int)Global.Key2D), 100});
                     renderMouse();
-                    DrawTextEx(Global.DefaultFont, TextFormat("FPS: %d",  GetFPS()), {ScaleCordX(5), ScaleCordY(5)}, Scale(15), Scale(1), GREEN);
-                    EndDrawing();
+                    DrawTextEx(&Global.DefaultFont, TextFormat("FPS: %d",  GetFPS()), {ScaleCordX(5), ScaleCordY(5)}, Scale(15), Scale(1), GREEN);
+                    C2D_Flush();  //test
+                    C3D_FrameEnd(0);
                 }
                 applyMouse = true;
                 init();
@@ -779,7 +811,7 @@ void WIPMenu::update(){
             animtime = 0.0f;
     }
 
-    if(IsKeyPressed(SDL_SCANCODE_BACKSPACE) and CanGoBack){
+    if(IsKeyPressed(KEY_B) and CanGoBack){
         Path.pop_back();
         while(Path[Path.size()-1] != '/'){
             Path.pop_back();
@@ -801,7 +833,8 @@ void WIPMenu::update(){
             GetKeys();
             updateMouseTrail();
             updateUpDown();
-            BeginDrawing();
+            C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
+            C2D_SceneBegin(Global.window);
             ClearBackground(Global.Background);
             int index = 0;
             float tempangle = angle;
@@ -836,22 +869,23 @@ void WIPMenu::update(){
                 Color temp = WHITE;
                 if(dir[dirNum] != "Back" and dir[dirNum][dir[dirNum].size() - 1] != '/')
                     temp = {255,135,198,255};
-                DrawTextureOnCircle(menu, 800, 240, 300*weirdSmooth, 0.4f, 0, tempAngle2 - 180.0f, temp);
+                DrawTextureOnCircle(&menu, 800, 240, 300*weirdSmooth, 0.4f, 0, tempAngle2 - 180.0f, temp);
                 DrawTextLeft((dir[dirNum]).c_str(), textpos.x, textpos.y, 9, WHITE);
                 DrawTextLeft((std::to_string((tempindex + index + dir.size() + offset) % dir.size() + 1) + " out of " + std::to_string(dir.size())).c_str(), textpos.x, textpos.y + 15*weirdSmooth, 7, WHITE);
             }
-            DrawTextureRotate(logo, 800, 240, 0.5f, angle, WHITE);
+            DrawTextureRotate(&logo, 800, 240, 0.5f, angle, WHITE);
 
             DrawRectangle(ScaleCordX(580), ScaleCordY(450), Scale(20), Scale(20),(Color) {0, (unsigned char)(255 * (int)Global.Key1P), (unsigned char)(255 * (int)Global.Key1D), 100});
             DrawRectangle(ScaleCordX(610), ScaleCordY(450), Scale(20), Scale(20), (Color){0, (unsigned char)(255 * (int)Global.Key2P), (unsigned char)(255 * (int)Global.Key2D), 100});
             renderMouse();
-            DrawTextEx(Global.DefaultFont, TextFormat("FPS: %d",  GetFPS()), {ScaleCordX(5), ScaleCordY(5)}, Scale(15), Scale(1), GREEN);
-            EndDrawing();
+            DrawTextEx(&Global.DefaultFont, TextFormat("FPS: %d",  GetFPS()), {ScaleCordX(5), ScaleCordY(5)}, Scale(15), Scale(1), GREEN);
+            C2D_Flush();  //test
+            C3D_FrameEnd(0);
         }
         applyMouse = true;
         init();
     }
-    if(IsKeyPressed(SDL_SCANCODE_BACKSPACE ) and !CanGoBack){
+    if(IsKeyPressed(KEY_B ) and !CanGoBack){
         Global.CurrentState->unload();
         Global.CurrentState.reset(new MainMenu());
     }
@@ -860,7 +894,7 @@ void WIPMenu::update(){
 void WIPMenu::unload(){
     dir.clear();
     subObjects.clear();
-    UnloadTexture(logo);
-    UnloadTexture(back);
-    UnloadTexture(menu);
+    UnloadTexture(&logo);
+    UnloadTexture(&back);
+    UnloadTexture(&menu);
 }

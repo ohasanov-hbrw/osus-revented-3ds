@@ -5,7 +5,7 @@
 #include <algorithm>
 #include "utils.hpp"
 #include <limits>
-
+#include "linkedListImpl.hpp"
 
 struct dbool
 {
@@ -39,9 +39,11 @@ class GameManager{
 		void loadGameTextures();
 		void loadGameSounds();
 		void unloadGameTextures();
-		void destroyHitObject(int index);
-		void destroyDeadHitObject(int index);
-		std::vector<int> sliderPreInit(HitObjectData data);
+		void destroyHitObject(Node *node);
+		void destroyDeadHitObject(Node *node);
+		void unloadSliderTextures();
+		//std::vector<int> sliderPreInit(HitObjectData data);
+		int * sliderPreInit(HitObjectData data);
 		void render();
 
 		HitSound SoundFilesAll;
@@ -49,7 +51,7 @@ class GameManager{
 
 		float windowScale = 2.0f;
         HitSound hitCircleHS;
-		int skip = 3;
+		int skip = 10;
 		bool renderSpinnerCircle = false;
 		bool renderSpinnerMetre = false;
 		bool renderSpinnerBack = false;
@@ -83,7 +85,7 @@ class GameManager{
 		int combo = 1;
 		int clickCombo = 0;
 		Color comboColour;
-		int score = 0;
+		long int score = 0;
 		float difficultyMultiplier = 0;
 		int currentComboIndex = 0;
 		int time;
@@ -104,10 +106,12 @@ class GameManager{
 		Vector2 MousePosition;
 		GameFile gameFile;
 		Parser parser;
+
+		Linkedlist objectsLinkedList;
+		Linkedlist deadObjectsLinkedList;
+
 		std::vector<HitObject*> objects;
-
 		std::vector<FollowPoint> followLines;
-
 		std::vector<HitObject*> dead_objects;
 		float clip(float value, float min, float max);
 		std::vector<timingSettings> timingSettingsForHitObject;

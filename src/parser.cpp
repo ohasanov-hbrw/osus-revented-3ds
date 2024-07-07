@@ -1,5 +1,6 @@
 #include "parser.hpp"
 #include "globals.hpp"
+#include <algorithm>
 
 Parser::Parser(){}
 
@@ -58,6 +59,8 @@ GameFile Parser::parse(std::string filename){
 	std::string line;
 	int lineNumber = 0;
 	Global.parsedLines = 0;
+	gameFile.hitObjects.reserve(numLines);
+	std::cout << "reserved " << numLines << std::endl;
 	if (ifs.is_open()){
 		std::cout << "file opened\n";
 		while(std::getline(ifs, line)){
@@ -65,7 +68,6 @@ GameFile Parser::parse(std::string filename){
 				line.pop_back();
 			lineNumber++;
 			Global.parsedLines++;
-			//std::cout << "Parsing line: " << lineNumber << " with the length: " << line.size() << " -> " << line << std::endl;
 			if(line[0] == '[' and line[line.size()-1] == ']'){
 				std::string header = line.substr(1);
 				header.pop_back();
@@ -251,7 +253,7 @@ GameFile Parser::parse(std::string filename){
 						std::pair<std::string, std::string> keyValue = parseKeyValue(subLine, false, false);
 						
 						if(subLine[0] == 'C'){
-							std::vector<int> tempColour (3);
+							std::vector<short> tempColour (3);
 							std::vector<std::string> tempVectorColours;
 							tempVectorColours = parseSeperatedLists(keyValue.second, ',');
 							for(int i = 0; i < 3; i++)
@@ -278,8 +280,8 @@ GameFile Parser::parse(std::string filename){
 						tempVector = parseSeperatedLists(subLine, ',');
 						HitObjectData tempHitObject;
 
-						tempHitObject.x = std::stoi(tempVector[0]) + 64;
-						tempHitObject.y = std::stoi(tempVector[1]) + 48;
+						tempHitObject.x = std::clamp(std::stoi(tempVector[0]) + 64, -32767, 32767);
+						tempHitObject.y = std::clamp(std::stoi(tempVector[1]) + 48, -32767, 32767);
 						tempHitObject.time = std::stoi(tempVector[2]);
 						tempHitObject.type = std::stoi(tempVector[3]);
 
@@ -346,7 +348,7 @@ GameFile Parser::parse(std::string filename){
 							for(size_t i = 1; i < tempVectorCurvePoints.size(); i++){
 								std::vector<std::string> tempVectorCurvePointCords;
 								tempVectorCurvePointCords = parseSeperatedLists(tempVectorCurvePoints[i], ':');
-								tempHitObject.curvePoints.push_back(std::make_pair(std::stoi(tempVectorCurvePointCords[0])+64, std::stoi(tempVectorCurvePointCords[1])+48));
+								tempHitObject.curvePoints.push_back(std::make_pair(std::clamp(std::stoi(tempVectorCurvePointCords[0])+64, -32767, 32767), std::clamp(std::stoi(tempVectorCurvePointCords[1])+48, -32767, 32767)));
 							}
 
 							/*if(tempHitObject.curveType == 'P' and tempHitObject.curvePoints.size() == 2 and (
@@ -484,7 +486,16 @@ std::pair<std::string, std::string> Parser::parseKeyValue(std::string line, bool
 
 std::vector<std::string> Parser::parseSeperatedLists(std::string list, char seperator){
 	std::vector<std::string> ans;
+	int size = 0;
 	int lastCommaLocation = - 1;
+	for(size_t i = 0; i < list.size(); i++){
+		if(list[i] == seperator or i == list.size()-1){
+			size++;
+			lastCommaLocation = i;
+		}
+	}
+	ans.reserve(size);
+	lastCommaLocation = - 1;
 	for(size_t i = 0; i < list.size(); i++){
 		if(list[i] == seperator or i == list.size()-1){
 			ans.push_back(list.substr(lastCommaLocation + 1, i - lastCommaLocation - 1 + int(i == list.size()-1)));
