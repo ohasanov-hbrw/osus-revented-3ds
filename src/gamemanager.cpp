@@ -964,7 +964,7 @@ void GameManager::render(){
 		objects[i]->render();
 	}*/
 
-	Node * hitObjectNode = objectsLinkedList.getHead();
+	Node * hitObjectNode = objectsLinkedList.getTail();
 	Node * hitObjectNodeNext;
 	HitObject* hitObject;
 	
@@ -973,14 +973,14 @@ void GameManager::render(){
 			break;
 		}
 		hitObject = (HitObject*)hitObjectNode->object;
-		hitObjectNodeNext = hitObjectNode->next;
+		hitObjectNodeNext = hitObjectNode->prev;
 
 		hitObject->render();
 
 		hitObjectNode = hitObjectNodeNext;
 	}
 
-	Node * deadHitObjectNode = deadObjectsLinkedList.getHead();
+	Node * deadHitObjectNode = deadObjectsLinkedList.getTail();
 	Node * deadHitObjectNodeNext;
 	HitObject* deadHitObject;
 	while(true){
@@ -988,7 +988,7 @@ void GameManager::render(){
 			break;
 		}
 		deadHitObject = (HitObject*)deadHitObjectNode->object;
-		deadHitObjectNodeNext = deadHitObjectNode->next;
+		deadHitObjectNodeNext = deadHitObjectNode->prev;
 
 		deadHitObject->dead_render();
 		
@@ -1001,7 +1001,7 @@ void GameManager::render(){
 	
 	if(spawnedHitObjects == 0 && gameFile.hitObjects[gameFile.hitObjects.size() - 1].time > 6000 + currentTime*1000.0f){
 		////Global.mutex.lock();
-		DrawTextEx(&Global.DefaultFont, TextFormat("TO SKIP PRESS \"S\"\n(Keep in mind that this can affect the offset\nbecause of how the raylib sounds system works)"), {ScaleCordX(5), ScaleCordY(420)}, Scale(15), Scale(1), WHITE);
+		DrawTextEx(&Global.DefaultFont, TextFormat("TO SKIP PRESS \"S\"\n(Keep in mind that this can affect the offset\nbecause of how the raylib sounds system works)"), {(int)ScaleCordX(5), (int)ScaleCordY(400)}, Scale(20.05), Scale(2), WHITE);
 		////Global.mutex.unlock();
 	}
 	//render the points and the combo

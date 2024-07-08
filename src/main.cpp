@@ -129,7 +129,7 @@ void RenderLoop(void *){
 
 
 
-        DrawTextEx(&Global.DefaultFont, TextFormat("FPS: %.3f TPS: %.3f",  avgFPS, avgHZ), {ScaleCordX(5), ScaleCordY(5)}, Scale(10), Scale(1), GREEN);
+        DrawTextEx(&Global.DefaultFont, TextFormat("FPS: %.3f TPS: %.3f",  avgFPS, avgHZ), {(int)ScaleCordX(5), (int)ScaleCordY(5)}, Scale(20.05), Scale(2), GREEN);
         if(C3D_GetCmdBufUsage() > 0.8f){
             std::cout << "NEARLY OVERFLOWING THE COMMAND BUFFER, BEWARE: " << C3D_GetCmdBufUsage() * 100 << "%\n";
         }
@@ -205,7 +205,10 @@ int main(){
     Global.OsusLogo = LoadTexture("sdmc:/3ds/resources/osus.png");
     std::cout << "Loaded logo\n";
     
-    Global.DefaultFont = LoadFont("sdmc:/3ds/resources/telegrama_render.otf");
+    //Global.DefaultFont = LoadFont("sdmc:/3ds/resources/telegrama_render.otf");
+    LoadFontDefault();
+    Global.DefaultFont = GetFontDefault();
+    
     std::cout << "Loaded font\n";
     
     
@@ -254,7 +257,7 @@ int main(){
     Global.Path = lastPath;
     std::cout << "Loaded skin";
 
-    SetTextureFilter(&Global.DefaultFont.texture, TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(&Global.DefaultFont.texture, TEXTURE_FILTER_POINT);
     SetTextureFilter(&Global.cursor, TEXTURE_FILTER_BILINEAR);
 
 
@@ -344,8 +347,8 @@ int main(){
     Global.CurrentState->unload();
     UnloadTexture(&Global.OsusLogo);
     UnloadTexture(&Global.cursor);
-    UnloadFont(&Global.DefaultFont);
-    
+    //UnloadFont(&Global.DefaultFont);
+    UnloadFontDefault();
 
     C2D_Fini();
 	C3D_Fini();

@@ -26,6 +26,10 @@ int GetCodepointNext(const char *text, int *codepointSize);
 int GetGlyphIndex(Font *font, int codepoint);
 Vector2 MeasureTextEx(Font *font, const char *text, float fontSize, float spacing);
 
+void UnloadFontDefault();
+void LoadFontDefault();
+Font GetFontDefault();
+
 void UnloadFont(Font *font);
 void UnloadFontData(GlyphInfo *glyphs, int glyphCount);
 void DrawTextPro(Font *font, const char *text, Vector2 position, Vector2 origin, float rotation, float fontSize, float spacing, Color tint);

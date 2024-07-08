@@ -259,13 +259,13 @@ void DrawTextureOnCircle(Texture2D *tex, float x, float y, float rad, float s, f
 
 void DrawTextCenter(const char *text, float x, float y, float s, Color color){
     //draw centered text
-    Vector2 size = MeasureTextEx(&Global.DefaultFont, text, s, 1);
+    Vector2 size = MeasureTextEx(&Global.DefaultFont, text, s, 2);
     DrawTextPro(&Global.DefaultFont, text, ScaleCords(Vector2{x - size.x / 2.0f, y - size.y / 2.0f}), Vector2{0,0}, 0, Scale(s), Scale(1), color);
 }
 
 void DrawTextLeft(const char *text, float x, float y, float s, Color color){
     //draw text LTR
-    Vector2 size = MeasureTextEx(&Global.DefaultFont, text, s, 1);
+    Vector2 size = MeasureTextEx(&Global.DefaultFont, text, s, 2);
     DrawTextPro(&Global.DefaultFont, text, ScaleCords(Vector2{x, y - size.y / 2.0f}), Vector2{0,0}, 0, Scale(s), Scale(1), color);
 }
 
