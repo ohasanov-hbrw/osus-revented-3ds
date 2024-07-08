@@ -11,6 +11,7 @@
 
 
 PlayMenu::PlayMenu() {
+    name = TextBox({320,440}, {520,40}, {0,0,0,0}, "BETA VERSION!", WHITE, 12, 50);
     description = TextBox({320,140}, {520,40}, {240,98,161,255}, "Select a Beatmap to play!", WHITE, 15, 50);
     bg = TextBox({320,240}, {530,290}, {240,98,161,255}, "", {240,98,161,255}, 15, 10);
     back = Button({395,360}, {120,40}, {255,135,198,255}, "Back", BLACK, 15);
@@ -47,6 +48,7 @@ void PlayMenu::render() {
     sound.render();
     usedskin.render();
     usedsound.render();
+    name.render();
     //Global.mutex.unlock();
 }
 void PlayMenu::update() {
@@ -57,7 +59,11 @@ void PlayMenu::update() {
     close.update();
     skin.update();
     sound.update();
-
+    /*if(lastIndex != dir_list.selectedindex){
+        name.text = dir_list.objects[dir_list.selectedindex].text;
+        name.update();
+        lastIndex = dir_list.selectedindex;
+    }*/
     if(skin.state != Global.settings.useDefaultSkin)
         Global.settings.useDefaultSkin = skin.state;
     
@@ -80,6 +86,7 @@ void PlayMenu::update() {
                 auto dir = ls(".osu");
                 dir_list = SelectableList(dir_list.position, dir_list.size, dir_list.color, dir, dir_list.textcolor, dir_list.textsize, dir_list.objectsize, dir_list.maxlength);
                 dir_list.init();
+                lastIndex = -3;
             }
             else{
                 Global.selectedPath = Global.Path + '/' + dir_list.objects[dir_list.selectedindex].text;

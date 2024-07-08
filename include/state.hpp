@@ -26,6 +26,7 @@ private:
     TextBox bg;
     TextBox path;
     TextBox description;
+    TextBox name;
     Switch skin;
     Switch sound;
     TextBox usedskin;
@@ -34,6 +35,7 @@ private:
 public:
     PlayMenu();
     std::string lastPos = "";
+    int lastIndex = -3;
     void init() override;
     void render() override;
     void update() override;

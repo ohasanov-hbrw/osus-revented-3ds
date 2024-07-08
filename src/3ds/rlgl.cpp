@@ -1184,6 +1184,9 @@ RenderTexture2D LoadRenderTexture(int width, int height, bool vram){
     RenderTexture2D target = { 0 };
     target.id = 1; // Load an empty framebuffer
     //std::cout << "shit.\n";
+    //TEST
+    //target.id = 0;
+    //return target;
     if (target.id > 0){
         target.texture.id = 1;
 
@@ -1200,7 +1203,7 @@ RenderTexture2D LoadRenderTexture(int width, int height, bool vram){
 		target.texture.subtex.top = 1.f;
 		target.texture.subtex.right = (target.texture.subtex.width /static_cast<float>(w_pow2));
 		target.texture.subtex.bottom = (1.0 - (target.texture.subtex.height / static_cast<float>(h_pow2)));
-
+        
         if(vramSpaceFree() <=  w_pow2 * h_pow2 * 2){
             vram = false;
         }

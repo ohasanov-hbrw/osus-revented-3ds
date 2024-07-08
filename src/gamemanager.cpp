@@ -1575,7 +1575,7 @@ void GameManager::loadGame(std::string filename){
 			}
 
 
-			redoCalc:
+			
 
 			if(gameFile.hitObjects[i].curveType == 'L'){
 				std::vector<float> lineLengths;
@@ -1606,7 +1606,30 @@ void GameManager::loadGame(std::string filename){
 			if(gameFile.hitObjects[i].curveType == 'P'){
 				if((edgePoints[0].x == edgePoints[2].x and edgePoints[0].y == edgePoints[2].y) or (edgePoints[1].x == edgePoints[2].x and edgePoints[1].y == edgePoints[2].y) or (edgePoints[0].x == edgePoints[1].x and edgePoints[0].y == edgePoints[1].y)){
 					gameFile.hitObjects[i].curveType = 'L';
-					goto redoCalc;
+					std::vector<float> lineLengths;
+					//std::cout << "will calculate linear slider id " << i << " at time " << gameFile.hitObjects[i].time << std::endl;
+					lineLengths.reserve(edgePoints.size());
+					for(size_t j = 0; j < edgePoints.size()-1; j++)
+						lineLengths.push_back(std::sqrt(std::pow(std::abs(edgePoints[j].x - edgePoints[j+1].x),2)+std::pow(std::abs(edgePoints[j].y - edgePoints[j+1].y),2)));
+					for(size_t j = 0; j < lineLengths.size(); j++)
+						totalLength += lineLengths[j];
+					float angle = atan2(edgePoints[edgePoints.size()-1].y - edgePoints[edgePoints.size()-2].y, edgePoints[edgePoints.size()-1].x - edgePoints[edgePoints.size()-2].x) * 180 / 3.14159265;
+					float hipotenus = gameFile.hitObjects[i].length - totalLength;
+					float xdiff = hipotenus * cos(-angle * 3.14159265 / 180.0f);
+					float ydiff = sqrt(std::abs(hipotenus*hipotenus-xdiff*xdiff));
+					int ything = 1;
+					if(angle < 0.0f){
+						ything = -1;
+					}
+					else if(angle == 0.0f){
+						ything = 0;
+					}
+
+					Vector2 extraPosition = {edgePoints[edgePoints.size()-1].x + xdiff, edgePoints[edgePoints.size()-1].y - ydiff * (float)ything};
+					
+					gameFile.hitObjects[i].totalLength = totalLength;
+					gameFile.hitObjects[i].lengths = lineLengths;
+					gameFile.hitObjects[i].extraPos = extraPosition;
 				}
 				else{
 					std::pair<Vector2, float> circleData = get2PerfectCircle(edgePoints[0], edgePoints[1], edgePoints[2]);
@@ -1647,9 +1670,6 @@ void GameManager::loadGame(std::string filename){
 				bool old = true;
 				if(old){
 					//std::cout << "will calculate bezier slider id " << i << " at time " << gameFile.hitObjects[i].time << std::endl;
-					Vector2 edges[edgePoints.size()];
-					for(size_t j = 0; j < edgePoints.size(); j++)
-						edges[j] = edgePoints[j];
 					std::vector<Vector2> tempEdges;
 					std::vector<Vector2> tempRender;
 					std::vector<float> curveLengths;
@@ -1660,13 +1680,14 @@ void GameManager::loadGame(std::string filename){
 							curves++;
 						}
 					}
+					curveLengths.reserve(curves);
 					for(size_t k = 0; k < edgePoints.size(); k++){
 						tempEdges.push_back(edgePoints[k]);
 						if(k == edgePoints.size()-1 || (edgePoints[k].x == edgePoints[k+1].x && edgePoints[k].y == edgePoints[k+1].y)){
 							currentResolution = 0;
 							int num = tempEdges.size();
-							num = std::max((int)(gameFile.hitObjects[i].length/curves), 50);
-							num = std::min(num, 1);
+							num = std::min((int)(gameFile.hitObjects[i].length/curves), 50);
+							num = std::max(num, 2);
 							int m = 0;
 							float tempLength = 0;
 							Vector2 lasttmp;
@@ -1683,8 +1704,18 @@ void GameManager::loadGame(std::string filename){
 								m++;
 							}
 							curveLengths.push_back(tempLength);
+							//if(temp)
 							// sometimes + 1 is better?????
 							totalCalculatedLength += tempLength;
+							
+							/*if(gameFile.hitObjects[i].time == 436){
+								std::cout << "calculated curves: " << curveLengths.size() << " length: " << tempLength << "edges: ";
+								for(int p = 0; p < tempEdges.size(); p++){
+									std::cout << tempEdges[p].y << " ";
+								}
+								std::cout << std::endl;
+								//SleepInMs(100);
+							}*/
 							tempEdges.clear();
 						}
 					}
@@ -2491,6 +2522,7 @@ int * GameManager::sliderPreInit(HitObjectData data){
 					tempResolution = data.lengths[curveIndex]; //clip(data.lengths[curveIndex], 0, 20000);
 					//std::cout << "tempResolution: " << tempResolution << std::endl;
 					tempResolution = std::min(data.lengths[curveIndex], 400.0f);
+					//tempResolution = std::max(tempResolution, 1);
 					if(tempResolution > 0 and tempEdges.size() > 1){
 						if(first){
 							samples.push_back(get2BezierPoint(tempEdges, tempEdges.size(), 0));

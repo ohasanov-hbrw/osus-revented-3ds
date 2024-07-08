@@ -78,7 +78,7 @@ TextBox::TextBox(Vector2 position, Vector2 size, Color color, std::string text, 
 void TextBox::render() {
     Vector2 TextBoxSize = MeasureTextEx(&Global.DefaultFont, rendertext.c_str(), textsize, 1);
     Vector2 TextBoxLocation = GetRaylibOrigin({GetCenter(this->getRect()).x, GetCenter(this->getRect()).y, TextBoxSize.x, TextBoxSize.y});\
-    DrawRectangleRec(ScaleRect(this->getRect()), BLUE);
+    //DrawRectangleRec(ScaleRect(this->getRect()), BLUE);
     if (focused) {
         DrawRectangleRec(ScaleRect(this->getRect()), textcolor);
         if(renderpos > -1)

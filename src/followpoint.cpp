@@ -65,7 +65,8 @@ void FollowPoint::render(){
                     opacity1 = 0.0f;
                 }
                 int opacity = (int)(128.0f * (opacity1));
-                DrawCircle(ScaleCordX(points[i].x), ScaleCordY(points[i].y), Scale(3), {255,200,255,opacity});
+                //DrawCircle(ScaleCordX(points[i].x), ScaleCordY(points[i].y), Scale(3), {255,200,255,opacity});
+                DrawCircleWithDepth((Vector2){ScaleCordX(points[i].x), ScaleCordY(points[i].y)}, Scale(3), 4, 0, {255,200,255,opacity});
 
             }
             //std::cout << std::endl;
