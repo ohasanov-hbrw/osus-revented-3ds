@@ -84,6 +84,7 @@ class GameManager{
 		double currentTimeTemp = -1;
 		int combo = 1;
 		int clickCombo = 0;
+		int maxCombo;
 		Color comboColour;
 		long int score = 0;
 		float difficultyMultiplier = 0;

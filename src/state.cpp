@@ -905,3 +905,38 @@ void WIPMenu::unload(){
     UnloadTexture(&back);
     UnloadTexture(&menu);
 }
+
+
+ResultsMenu::ResultsMenu() {
+    name = TextBox({320,40}, {520,60}, {0,0,0,0}, "Results!", WHITE, 40, 50);
+    close = Button({480, 440}, {160,30}, {255,135,198,255}, "Back to menu", BLACK, 20);
+    maxCombo = TextBox({320,80}, {520,60}, {0,0,0,0}, "Maximum Combo: Not available", WHITE, 20, 50);
+}
+
+void ResultsMenu::init() {
+    std::cout << "loading the scores" << std::endl;;
+    std::cout << "Maximum Combo: " + std::to_string(Global.gameManager->maxCombo) << std::endl;
+    maxCombo.text = "Maximum Combo: " + std::to_string(Global.gameManager->maxCombo);
+    maxCombo.init();
+    Global.NeedForBackgroundClear = true;
+    Global.useAuto = false;
+    Global.LastFrameTime = getTimer();
+    
+}
+void ResultsMenu::render() {
+    close.render();
+    name.render();
+    maxCombo.render();
+    //Global.mutex.unlock();
+}
+void ResultsMenu::update() {
+    close.update();
+    if(close.action){
+        Global.CurrentState->unload();
+        Global.CurrentState.reset(new PlayMenu());
+        Global.CurrentState->init();
+    }
+}
+void ResultsMenu::unload() {
+
+}

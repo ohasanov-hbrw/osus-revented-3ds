@@ -631,6 +631,7 @@ void Slider::update(){
             SetSoundVolume(&gm->SoundFilesAll.data["combobreak"], 1.0f);
             PlaySound(&gm->SoundFilesAll.data["combobreak"]);
         }
+        gm->maxCombo = std::max(gm->maxCombo, gm->clickCombo);
         gm->clickCombo = 0;
     }
     calPos = position;
@@ -690,6 +691,7 @@ void Slider::update(){
 							SetSoundVolume(&gm->SoundFilesAll.data["combobreak"], 1.0f);
 							PlaySound(&gm->SoundFilesAll.data["combobreak"]);
 						}
+                        gm->maxCombo = std::max(gm->maxCombo, gm->clickCombo);
                         gm->clickCombo = 0;
                     }
                 }
@@ -759,6 +761,7 @@ void Slider::update(){
                     SetSoundVolume(&gm->SoundFilesAll.data["combobreak"], 1.0f);
                     PlaySound(&gm->SoundFilesAll.data["combobreak"]);
                 }
+                gm->maxCombo = std::max(gm->maxCombo, gm->clickCombo);
                 gm->clickCombo = 0;
             }
         }
@@ -777,6 +780,7 @@ void Slider::update(){
                     SetSoundVolume(&gm->SoundFilesAll.data["combobreak"], 1.0f);
                     PlaySound(&gm->SoundFilesAll.data["combobreak"]);
                 }
+                gm->maxCombo = std::max(gm->maxCombo, gm->clickCombo);
                 gm->clickCombo = 0;
             }
             else if(data.point == 1){
@@ -849,6 +853,7 @@ void Slider::update(){
                         SetSoundVolume(&gm->SoundFilesAll.data["combobreak"], 1.0f);
                         PlaySound(&gm->SoundFilesAll.data["combobreak"]);
                     }
+                    gm->maxCombo = std::max(gm->maxCombo, gm->clickCombo);
                     gm->clickCombo = 0;
                 }
             }
@@ -944,14 +949,14 @@ void Slider::render(){
                         if(i < renderPoints.size() and renderPoints[i].x > -150 and renderPoints[i].x < 790 and renderPoints[i].y > -150 and renderPoints[i].y < 630){
                             if(true){
                                 Vector2 centerCoord = {(renderPoints[i].x+4 * Global.sliderTexSize-minX + gm->circlesize/2.0f) * Global.sliderTexSize, (((renderPoints[i].y+4 * Global.sliderTexSize-minY + gm->circlesize/2.0f) * Global.sliderTexSize))};
-                                DrawCircleWithDepth(centerCoord, ((gm->circlesize/2.0f) * 0.85)  * Global.sliderTexSize, Global.circleSector, 0.5f, {2, 0, 4, 128});
+                                DrawCircleWithDepth(centerCoord, ((gm->circlesize/2.0f) * 0.85)  * Global.sliderTexSize, Global.circleSector, 0.5f, Fade(Color{(unsigned char)((float)data.colour[0]*0.2f),(unsigned char)((float)data.colour[1]*0.2f),(unsigned char)((float)data.colour[2]*0.2f)}, 1.0f));//{2, 0, 4, 128});
                                 amogusLast = std::max(i, 0);
                                 if(amogusLast == renderPoints.size() - 1){
                                     amogusLast = renderPoints.size();
                                 }
                                 if(i + gm->skip >= renderPoints.size()){
                                     Vector2 centerCoord = {(renderPoints[renderPoints.size()-1].x+4 * Global.sliderTexSize-minX + gm->circlesize/2.0f) * Global.sliderTexSize, (((renderPoints[renderPoints.size()-1].y+4 * Global.sliderTexSize-minY + gm->circlesize/2.0f) * Global.sliderTexSize))};
-                                    DrawCircleWithDepth(centerCoord, ((gm->circlesize/2.0f) * 0.85)  * Global.sliderTexSize, Global.circleSector, 0.5f, {2, 0, 4, 128});
+                                    DrawCircleWithDepth(centerCoord, ((gm->circlesize/2.0f) * 0.85)  * Global.sliderTexSize, Global.circleSector, 0.5f, Fade(Color{(unsigned char)((float)data.colour[0]*0.2f),(unsigned char)((float)data.colour[1]*0.2f),(unsigned char)((float)data.colour[2]*0.2f)}, 1.0f));//{2, 0, 4, 128});
                                 }
                             }
                         }

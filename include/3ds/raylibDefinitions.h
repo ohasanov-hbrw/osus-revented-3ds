@@ -386,6 +386,7 @@ typedef struct Music {
     bool paused = false;
     char* filename;
     u64 length;
+    bool ended = false;
     unsigned int numberOfSamples;
     unsigned int sampleRate;    // Frequency (samples per second)
     unsigned int sampleSize;    // Bit depth (bits per sample): 8, 16, 32 (24 not supported)

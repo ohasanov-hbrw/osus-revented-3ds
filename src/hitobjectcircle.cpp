@@ -32,6 +32,7 @@ void Circle::update(){
             SetSoundVolume(&gm->SoundFilesAll.data["combobreak"], 1.0f);
             PlaySound(&gm->SoundFilesAll.data["combobreak"]);
         }
+        gm->maxCombo = std::max(gm->maxCombo, gm->clickCombo);
         gm->clickCombo = 0;
         //gm->destroyHitObject(data.index);
         data.destruct = true;

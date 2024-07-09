@@ -14,6 +14,7 @@
 #include <sys/time.h>
 #include "followpoint.hpp"
 #include "time_util.hpp"
+#include "state.hpp"
 
 #include "linkedListImpl.hpp"
 
@@ -621,7 +622,9 @@ void GameManager::update(){
 							SetSoundVolume(&SoundFilesAll.data["combobreak"], 1.0f);
 							PlaySound(&SoundFilesAll.data["combobreak"]);
 						}
+						maxCombo = std::max(maxCombo, clickCombo);
 						clickCombo = 0;
+						
 						Global.Key1P = false;
 						Global.Key2P = false;
 					}
@@ -700,6 +703,7 @@ void GameManager::update(){
 								SetSoundVolume(&SoundFilesAll.data["combobreak"], 1.0f);
 								PlaySound(&SoundFilesAll.data["combobreak"]);
 							}
+							maxCombo = std::max(maxCombo, clickCombo);
 							clickCombo = 0;
 							Global.Key1P = false;
 							Global.Key2P = false;
@@ -1063,10 +1067,26 @@ void GameManager::run(){
 				SeekMusicStream(&backgroundMusic, (gameFile.hitObjects[gameFile.hitObjects.size() - 1].time - 3000.0f) / 1000.0f);
 			}
 		}
-		if(GetMusicTimeLength(&backgroundMusic) - GetMusicTimePlayed(&backgroundMusic) < 0.005f)
-			stop = true;
-		if(stop && Global.curTime2 < 1.0f){
+		//if(GetMusicTimeLength(&backgroundMusic) - GetMusicTimePlayed(&backgroundMusic) < 0.1f)
+		//	stop = true;
+		if(backgroundMusic.ended){
+			maxCombo = std::max(maxCombo, clickCombo);
 			StopMusicStream(&backgroundMusic);
+			TimerLast = (double)GetMusicTimeLength(&backgroundMusic) * 1000.0;
+			TimeLast = getTimer();
+			std::cout << "waitingStart\n";
+			while(true){
+				currentTime = (double)(TimerLast + (getTimer() - TimeLast)) / 1000.0;
+				GameManager::update();
+				SleepInMs(5);
+				if((getTimer() - TimeLast) > 1500.0)
+					break;
+			}
+			std::cout << "waitingDone\n";
+			Global.CurrentState->unload();
+            Global.CurrentState.reset(new ResultsMenu());
+            Global.CurrentState->init();
+			return;
 		}
 		
 		
@@ -1113,7 +1133,7 @@ void GameManager::run(){
 		currentTime = (double)Time / 1000.0;
 		if(IsMusicStreamPlaying(&backgroundMusic)){
 			//currentTime = (Global.currentOsuTime + Global.offsetTime) / 1000.0;
-			currentTime = GetMusicTimePlayed(&backgroundMusic);
+			//currentTime = GetMusicTimePlayed(&backgroundMusic);
 			//std::cout << "music playin\n";
 		}
 
@@ -1827,7 +1847,7 @@ void GameManager::loadGame(std::string filename){
 	//reset the score and the combo
 	score = 0;
 	clickCombo = 0;
-
+	maxCombo = 0;
     //TODO: these are not used right now, USE THEM
 	float hpdrainrate = std::stof(gameFile.configDifficulty["HPDrainRate"]);
 

@@ -42,6 +42,19 @@ public:
     void unload() override;
 };
 
+class ResultsMenu : public State {
+private:
+    Button close;
+    TextBox name;
+    TextBox maxCombo;
+public:
+    ResultsMenu();
+    void init() override;
+    void render() override;
+    void update() override;
+    void unload() override;
+};
+
 class LoadMenu : public State {
 private:
     SelectableList dir_list;

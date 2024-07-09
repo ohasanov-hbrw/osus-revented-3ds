@@ -45,6 +45,10 @@ void PlaySound(Sound *sound){
                         //std::cout << "freeing the channel\n";
                     }
                 }
+                else{
+                    Global.channelOccupied[i] = false;
+                    ndspChnWaveBufClear(i);
+                }
             }
         }
         for(int i = 2; i < 23; i++){
@@ -65,6 +69,7 @@ void PlaySound(Sound *sound){
                 sound->id = i;
                 Global.channelOccupied[i] = true;
                 Global.soundAtChannel[i] = sound;
+                Global.soundAtChannel[i]->waveBuf.status = NDSP_WBUF_PLAYING;
 
                 //std::cout << "sound on channel " << i << std::endl;
                 return;
@@ -83,6 +88,7 @@ void PlayMusicStream(Music *music){
     else{
         //int channel = 0;
         music->playing = true;
+        music->ended = false;
         music->paused = false;
         music->command = 0x00000000;
         music->thread = threadCreate((void (*)(void*))MusicThread, music, 512*1024, 0x27, -1, false);
@@ -161,6 +167,7 @@ void StopMusicStream(Music *music){
             ndspChnWaveBufClear(i);
         }
         music->playing = false;
+        music->ended = true;
     }
 
 }
@@ -288,7 +295,7 @@ void MusicThread(Music *music){
     }
 
     exitMusicThread:
-
+    
     while(true){
         bool exit = true;
         for(int i = 0; i < numberOfBuffers; i++){
@@ -303,6 +310,8 @@ void MusicThread(Music *music){
     }
     ndspChnReset(channel);
     ndspChnWaveBufClear(channel);
+    music->playing = false;
+    music->ended = true;
 }
 
 Music LoadMusicStream(const char *filename){

@@ -107,6 +107,7 @@ void Spinner::update(){
             }
             else{
                 data.point = 0;
+                gm->maxCombo = std::max(gm->maxCombo, gm->clickCombo);
                 gm->clickCombo = 0;
             }
         }
