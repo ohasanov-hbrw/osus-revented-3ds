@@ -38,6 +38,7 @@ GameFile Parser::parseMetadata(std::string filename){
 	return gameFile;
 }
 
+
 GameFile Parser::parse(std::string filename){
 	GameFile gameFile;
 	gameFile.configGeneral["AudioLeadIn"] = "0";

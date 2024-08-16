@@ -7,8 +7,9 @@
 #include "fastrender.hpp"
 #include "rlgl.h"
 #include "raylib.h"
-
-
+#include <dirent.h>
+#include <gamefile.hpp>
+#include <ctype.h>
 
 PlayMenu::PlayMenu() {
     name = TextBox({320,440}, {520,40}, {0,0,0,0}, "BETA VERSION!", WHITE, 20, 50);
@@ -213,6 +214,93 @@ void MainMenu::update() {
         //Global.CurrentState->unload();
         //Global.CurrentState.reset(new WIPMenu());
         //Global.CurrentState->init();
+        std::string temp = Global.Path;
+        Global.Path = "sdmc:/3ds/database";
+
+        struct dirent *de;
+        DIR *dr = opendir(Global.Path.c_str()); 
+        if (dr == NULL){ // opendir returns NULL if couldn't open directory { 
+            printf("Could not open current directory: database" ); 
+        }
+        else{
+            while ((de = readdir(dr)) != NULL) {
+                 std::remove((Global.Path + "/" + de->d_name).c_str());
+            }
+            closedir(dr);
+        }
+
+        Global.Path = temp;
+        Parser parser = Parser();
+        for(const auto& p: std::filesystem::recursive_directory_iterator(Global.BeatmapLocation)){
+            if(!std::filesystem::is_directory(p)){
+                if(p.path().extension().string() == ".osu"){
+                    //std::cout << p.path().string() << '\n';
+                    GameFile geym;
+                    geym = parser.parseMetadata(p.path().string());
+                    if(geym.configMetadata.find("BeatmapSetID") == geym.configMetadata.end()){
+                        std::cout << "didnt find setid bro, tryin to improvise\n";
+                        std::string doublecheck = p.path().parent_path().filename().string();
+                        int index = 0;
+                        bool works = false;
+                        bool startswithnumber = isdigit(doublecheck.at(0));
+                        int number = 0;
+                        
+                        while(true){
+                            if(index >= doublecheck.length()){
+                                break;
+                            }
+                            if(!isdigit(doublecheck.at(index))){
+                                if(doublecheck[index] == ' '){
+                                    if(startswithnumber){
+                                        works = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            else{
+                                number *= 10;
+                                number += int(doublecheck[index] - '0');
+                            }
+                            index++;
+                            //std::cout << "number: " << number << std::endl;
+                        }
+                        if(geym.configMetadata.find("Title") == geym.configMetadata.end()){
+                            std::cout << "didnt find Setid nor title bro, cant do much\n";
+                        }
+                        else{
+                            std::string title = geym.configMetadata["Title"];
+                            if(works){
+                                FILE * pFile;
+                                pFile = fopen(("sdmc:/3ds/database/" + std::to_string(number) + " {" + title + "}" + ".db").c_str()  ,"a");
+                                if(pFile != NULL){
+                                    fprintf(pFile, (p.path().string() + " - found\n").c_str());
+                                    fclose(pFile);
+                                }
+                            }
+                        }
+
+                    }
+                    else{
+                        std::string title;
+                        if(geym.configMetadata.find("Title") == geym.configMetadata.end()){
+                            std::cout << "didnt title bro, setting as Unknown\n";
+                            title = "Unknown";
+                        }
+                        else{
+                            title = geym.configMetadata["Title"];
+                        }
+                        //std::cout << geym.configMetadata["BeatmapSetID"] << std::endl;
+                        FILE * pFile;
+                        pFile = fopen(("sdmc:/3ds/database/" + geym.configMetadata["BeatmapSetID"] + " {" + title + "}" + ".db").c_str()  ,"a");
+                        if(pFile != NULL){
+                            fprintf(pFile, (p.path().string() + " - found\n").c_str());
+                            fclose(pFile);
+                        }
+                    }
+                }
+            }
+        }
+
         return;
     }
     else if(play.action){
