@@ -1,5 +1,7 @@
 #include <fastrender.hpp>
+//This file includes functions for rendering the mouse
 
+//Mouse Trails are disabled right now, I don't really see people using them anyway...
 void initMouseTrail(){
     while(MouseTrail.size() < 150){
         MouseTrail.push_back({-10,-10});

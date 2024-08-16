@@ -140,7 +140,10 @@ class GameManager{
 		bool temprenderSpinnerMetre = false;
 		bool temprenderSpinnerBack = false;
 
-
+		int hit300s = 0;
+		int hit100s = 0;
+		int hit50s = 0;
+		int hit0s = 0;
 
 		std::string lastPath;
 		std::string GamePathWithSlash;

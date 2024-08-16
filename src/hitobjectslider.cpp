@@ -754,6 +754,7 @@ void Slider::update(){
                 data.point = 3;
                 gm->score += 300 + (300 * (std::max(gm->clickCombo-1,0) * gm->difficultyMultiplier * 1)/25);
                 gm->clickCombo++;
+                gm->hit300s++;
             }
             else{
                 data.point = 0;
@@ -782,18 +783,22 @@ void Slider::update(){
                 }
                 gm->maxCombo = std::max(gm->maxCombo, gm->clickCombo);
                 gm->clickCombo = 0;
+                gm->hit0s++;
             }
             else if(data.point == 1){
                 gm->score += 50 + (50 * (std::max(gm->clickCombo-1,0) * gm->difficultyMultiplier * 1)/25);
                 gm->clickCombo++;
+                gm->hit50s++;
             }
             else if(data.point == 2){
                 gm->score += 100 + (100 * (std::max(gm->clickCombo-1,0) * gm->difficultyMultiplier * 1)/25);
                 gm->clickCombo++;
+                gm->hit100s++;
             }
             else if(data.point == 3){
                 gm->score += 300 + (300 * (std::max(gm->clickCombo-1,0) * gm->difficultyMultiplier * 1)/25);
                 gm->clickCombo++;
+                gm->hit300s++;
             }
         }
 

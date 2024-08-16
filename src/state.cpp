@@ -911,6 +911,11 @@ ResultsMenu::ResultsMenu() {
     name = TextBox({320,40}, {520,60}, {0,0,0,0}, "Results!", WHITE, 40, 50);
     close = Button({480, 440}, {160,30}, {255,135,198,255}, "Back to menu", BLACK, 20);
     maxCombo = TextBox({320,80}, {520,60}, {0,0,0,0}, "Maximum Combo: Not available", WHITE, 20, 50);
+    hit300 = TextBox({320,120}, {520,60}, {0,0,0,0}, "300s hit: Not available", WHITE, 20, 50);
+    hit100 = TextBox({320,160}, {520,60}, {0,0,0,0}, "100s hit: Not available", WHITE, 20, 50);
+    hit50 = TextBox({320,200}, {520,60}, {0,0,0,0}, "50s hit: Not available", WHITE, 20, 50);
+    hit0 = TextBox({320,240}, {520,60}, {0,0,0,0}, "Misses: Not available", WHITE, 20, 50);
+    accuracy = TextBox({320,280}, {520,60}, {0,0,0,0}, "Accuracy: Not available", WHITE, 20, 50);
 }
 
 void ResultsMenu::init() {
@@ -918,6 +923,19 @@ void ResultsMenu::init() {
     std::cout << "Maximum Combo: " + std::to_string(Global.gameManager->maxCombo) << std::endl;
     maxCombo.text = "Maximum Combo: " + std::to_string(Global.gameManager->maxCombo);
     maxCombo.init();
+    hit300.text = "300s hit: " + std::to_string(Global.gameManager->hit300s);
+    hit300.init();
+    hit100.text = "100s hit: " + std::to_string(Global.gameManager->hit100s);
+    hit100.init();
+    hit50.text = "50s hit: " + std::to_string(Global.gameManager->hit50s);
+    hit50.init();
+    hit0.text = "0s hit: " + std::to_string(Global.gameManager->hit0s);
+    hit0.init();
+    float accuracy = ((300.0f * Global.gameManager->hit300s + 10.0f * Global.gameManager->hit100s + 50.0f * Global.gameManager->hit50s) 
+    / (300.0f * (Global.gameManager->hit300s + Global.gameManager->hit100s + Global.gameManager->hit50s + Global.gameManager->hit0s))) * 100.0f;
+    //accuracy = std::ceil(accuracy * 100.0) / 100.0;
+    hit0.text = "Accuracy: " + std::to_string(accuracy) + "%";
+    hit0.init();
     Global.NeedForBackgroundClear = true;
     Global.useAuto = false;
     Global.LastFrameTime = getTimer();
@@ -927,6 +945,10 @@ void ResultsMenu::render() {
     close.render();
     name.render();
     maxCombo.render();
+    hit300.render();
+    hit100.render();
+    hit50.render();
+    hit0.render();
     //Global.mutex.unlock();
 }
 void ResultsMenu::update() {

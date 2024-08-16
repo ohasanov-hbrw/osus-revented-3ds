@@ -284,309 +284,6 @@ void GameManager::update(){
 		}
 	}
 
-	//update and check collision for every hit circle
-	/*int newSize = objects.size();
-	int oldSize = objects.size();
-	int susSize = objects.size();
-	bool stop = true;
-	if(susSize == 0){
-		Global.AutoMouseStartTime = currentTime*1000.0f;
-	}
-	for(int i = 0; i < objects.size(); i++){
-		//if((std::abs(currentTime*1000 - objects[i]->data.time) <= gameFile.p50Final)){
-		
-		if(IsKeyPressed(SDLK_x)){
-			Global.AutoMouseStartTime = currentTime*1000.0f;
-			Global.AutoMousePositionStart = {320, 240};
-		}
-
-		if(i == 0){
-			objects[i]->data.touch = true;
-			Global.AutoMousePosition = lerp(Global.AutoMousePositionStart, {objects[i]->data.x, objects[i]->data.y}, clip((currentTime*1000.0f-Global.AutoMouseStartTime) / (objects[i]->data.time-Global.AutoMouseStartTime), 0, 1));
-		}
-		if (stop && i == 0 && (Global.Key1P or Global.Key2P)){
-			if (objects[i]->data.type != 2){
-				if (CheckCollisionPointCircle(Global.MousePosition,Vector2{objects[i]->data.x,(float)objects[i]->data.y}, circlesize/2.0f)){
-					if(std::abs(currentTime*1000.0f - objects[i]->data.time) > gameFile.p50Final + Global.extraJudgementTime/2.0f){
-						objects[i]->data.point = 0;
-						if(clickCombo > 30){
-							SetSoundVolume(&SoundFilesAll.data["combobreak"], 1.0f);
-							PlaySound(&SoundFilesAll.data["combobreak"]);
-						}
-						clickCombo = 0;
-						Global.Key1P = false;
-						Global.Key2P = false;
-					}
-					else if(std::abs(currentTime*1000.0f - objects[i]->data.time) > gameFile.p100Final + Global.extraJudgementTime/2.0f){
-						objects[i]->data.point = 1;
-						score+= 50 + (50 * (std::max(clickCombo-1,0) * difficultyMultiplier * 1)/25);
-						clickCombo++;
-						Global.errorDiv++;
-						Global.errorLast = (long long)((currentTime*1000.0f - objects[i]->data.time) * 1000.0f);
-						Global.errorSum += Global.errorLast;
-						Global.Key1P = false;
-						Global.Key2P = false;
-					}
-					else if(std::abs(currentTime*1000.0f - objects[i]->data.time) > gameFile.p300Final + Global.extraJudgementTime/2.0f){
-						objects[i]->data.point = 2;
-						score+= 100 + (100 * (std::max(clickCombo-1,0) * difficultyMultiplier * 1)/25);
-						clickCombo++;
-						Global.errorDiv++;
-						Global.errorLast = (long long)((currentTime*1000.0f - objects[i]->data.time) * 1000.0f);
-						Global.errorSum += Global.errorLast;
-						Global.Key1P = false;
-						Global.Key2P = false;
-					}
-					else{
-						objects[i]->data.point = 3;
-						score+= 300 + (300 * (std::max(clickCombo-1,0) * difficultyMultiplier * 1)/25);
-						clickCombo++;
-						Global.errorDiv++;
-						Global.errorLast = (long long)((currentTime*1000.0f - objects[i]->data.time) * 1000.0f);
-						Global.errorSum += Global.errorLast;
-						Global.Key1P = false;
-						Global.Key2P = false;
-					}
-					int volume = objects[i]->data.volume;
-					if(volume == 0){
-						objects[i]->data.volume = objects[i]->data.timing.volume;
-						volume = objects[i]->data.volume;
-					}
-
-
-					std::vector<std::string> sounds = getAudioFilenames(currentTimingSettings.sampleSet, currentTimingSettings.sampleIndex, defaultSampleSet, objects[i]->data.normalSet, objects[i]->data.additionSet, objects[i]->data.hitSound, objects[i]->data.hindex, objects[i]->data.filename);
-
-
-					for(int soundIndex = 0; soundIndex < sounds.size(); soundIndex+=2){
-						if(SoundFilesAll.data.count(sounds[soundIndex]) == 1 and SoundFilesAll.loaded[sounds[soundIndex]].value){
-							SetSoundPan(&SoundFilesAll.data[sounds[soundIndex]], 1-clip(objects[i]->data.x / 640.0, 0, 1));
-							SetSoundVolume(&SoundFilesAll.data[sounds[soundIndex]], Global.hitVolume * ((float)volume/100.0f));
-							PlaySound(&SoundFilesAll.data[sounds[soundIndex]]);
-							//std::cout << sounds[0] << " played \n";
-						}
-						else if(SoundFilesAll.data.count(sounds[soundIndex+1]) == 1 and SoundFilesAll.loaded[sounds[soundIndex+1]].value){
-							SetSoundPan(&SoundFilesAll.data[sounds[soundIndex+1]], 1-clip(objects[i]->data.x / 640.0, 0, 1));
-							SetSoundVolume(&SoundFilesAll.data[sounds[soundIndex+1]], Global.hitVolume * ((float)volume/100.0f));
-							PlaySound(&SoundFilesAll.data[sounds[soundIndex+1]]);
-							//std::cout << sounds[1] << " played \n";
-						}
-					}
-
-					objects[i]->data.time = currentTime*1000.0f;
-					destroyHitObject(i);
-					newSize = objects.size();
-					stop = false;
-					if(newSize != oldSize){
-						i--;
-						oldSize = newSize;
-					}
-				}
-				else{
-					objects[i]->data.touch = true;
-					objects[i]->update();
-					newSize = objects.size();
-					if(newSize != oldSize){
-						i--;
-						oldSize = newSize;
-					}
-				}
-			}
-			else if (objects[i]->data.type == 2){
-				if(Slider* tempslider = dynamic_cast<Slider*>(objects[i])){
-					if(CheckCollisionPointCircle(Global.MousePosition,Vector2{objects[i]->data.x,(float)objects[i]->data.y}, circlesize/2.0f) && currentTime*1000.0f < tempslider->data.time + gameFile.p50Final){
-						if(std::abs(currentTime*1000.0f - tempslider->data.time) > gameFile.p50Final + Global.extraJudgementTime/2.0f){
-							tempslider->is_hit_at_first = true;
-							stop = false;
-							tempslider->earlyhit = true;
-							if(clickCombo > 30){
-								SetSoundVolume(&SoundFilesAll.data["combobreak"], 1.0f);
-								PlaySound(&SoundFilesAll.data["combobreak"]);
-							}
-							clickCombo = 0;
-							Global.Key1P = false;
-							Global.Key2P = false;
-						}
-						else{
-							tempslider->is_hit_at_first = true;
-							stop = false;
-							clickCombo++;
-							Global.Key1P = false;
-							Global.Key2P = false;
-						}
-						int volume = tempslider->data.volume;
-						if(volume == 0){
-							tempslider->data.volume = tempslider->data.timing.volume;
-							volume = tempslider->data.volume;
-						}
-
-
-						std::vector<std::string> sounds = getAudioFilenames(currentTimingSettings.sampleSet, currentTimingSettings.sampleIndex, defaultSampleSet, objects[i]->data.edgeSets[0].first, objects[i]->data.edgeSets[0].second, objects[i]->data.edgeSounds[0], objects[i]->data.hindex, objects[i]->data.filename);
-
-						for(int soundIndex = 0; soundIndex < sounds.size(); soundIndex+=2){
-							if(SoundFilesAll.data.count(sounds[soundIndex]) == 1 and SoundFilesAll.loaded[sounds[soundIndex]].value){
-								SetSoundPan(&SoundFilesAll.data[sounds[soundIndex]], 1-clip(objects[i]->data.x / 640.0, 0, 1));
-								SetSoundVolume(&SoundFilesAll.data[sounds[soundIndex]], Global.hitVolume * ((float)volume/100.0f) );
-								PlaySound(&SoundFilesAll.data[sounds[soundIndex]]);
-								//std::cout << sounds[0] << " played \n";
-							}
-							else if(SoundFilesAll.data.count(sounds[soundIndex+1]) == 1 and SoundFilesAll.loaded[sounds[soundIndex+1]].value){
-								SetSoundPan(&SoundFilesAll.data[sounds[soundIndex+1]], 1-clip(objects[i]->data.x / 640.0, 0, 1));
-								SetSoundVolume(&SoundFilesAll.data[sounds[soundIndex+1]], Global.hitVolume * ((float)volume/100.0f));
-								PlaySound(&SoundFilesAll.data[sounds[soundIndex+1]]);
-								//std::cout << sounds[1] << " played \n";
-							}
-						}
-
-					}
-				}
-				//this cursed else train is nothing to worry about...
-				objects[i]->data.index = i;
-				objects[i]->update();
-				newSize = objects.size();
-				if(newSize != oldSize){
-					i--;
-					oldSize = newSize;
-				}
-			}
-			else{
-				objects[i]->data.index = i;
-				objects[i]->update();
-				newSize = objects.size();
-				if(newSize != oldSize){
-					i--;
-					oldSize = newSize;
-				}
-			}
-			Global.Key1P = false;
-			Global.Key2P = false;
-		}
-		else{
-			bool debugf = IsKeyDown(SDLK_x);
-			if(debugf){
-				//std::cout << "updating object on time: " << objects[i]->data.time << std::endl;
-				
-				newSize = objects.size();
-				if(newSize != oldSize){
-					i--;
-					oldSize = newSize;
-				}
-				else{
-					if(objects[i]->data.point != 3 && currentTime*1000.0f > objects[i]->data.time){
-						if (objects[i]->data.type != 2){
-							//Global.MousePosition = {objects[i]->data.x, objects[i]->data.y};
-							objects[i]->data.point = 3;
-							score+= 300 + (300 * (std::max(clickCombo-1,0) * difficultyMultiplier * 1)/25);
-							clickCombo++;
-							int volume = objects[i]->data.volume;
-							if(volume == 0){
-								objects[i]->data.volume = objects[i]->data.timing.volume;
-								volume = objects[i]->data.volume;
-							}
-
-							std::vector<std::string> sounds = getAudioFilenames(currentTimingSettings.sampleSet, currentTimingSettings.sampleIndex, defaultSampleSet, objects[i]->data.normalSet, objects[i]->data.additionSet, objects[i]->data.hitSound, objects[i]->data.hindex, objects[i]->data.filename);
-							
-							//std::cout << sounds.size() << std::endl;
-
-							for(int soundIndex = 0; soundIndex < sounds.size(); soundIndex+=2){
-								if(SoundFilesAll.data.count(sounds[soundIndex]) == 1 and SoundFilesAll.loaded[sounds[soundIndex]].value){
-									SetSoundPan(&SoundFilesAll.data[sounds[soundIndex]], 1-clip(objects[i]->data.x / 640.0, 0, 1));
-									SetSoundVolume(&SoundFilesAll.data[sounds[soundIndex]], Global.hitVolume * ((float)volume/100.0f));
-									PlaySound(&SoundFilesAll.data[sounds[soundIndex]]);
-									//std::cout << sounds[0] << " played \n";
-								}
-								else if(SoundFilesAll.data.count(sounds[soundIndex+1]) == 1 and SoundFilesAll.loaded[sounds[soundIndex+1]].value){
-									SetSoundPan(&SoundFilesAll.data[sounds[soundIndex+1]], 1-clip(objects[i]->data.x / 640.0, 0, 1));
-									SetSoundVolume(&SoundFilesAll.data[sounds[soundIndex+1]], Global.hitVolume * ((float)volume/100.0f));
-									PlaySound(&SoundFilesAll.data[sounds[soundIndex+1]]);
-									//std::cout << sounds[1] << " played \n";
-								}
-							}
-
-							//std::cout << 3.5*easeInOutCubic((1-(currentTime*1000.0f - objects[i]->data.time + gameFile.preempt)/gameFile.preempt))+1 << std::endl;
-							objects[i]->data.time = currentTime*1000.0f;
-
-							Global.AutoMousePositionStart = {objects[i]->data.x, objects[i]->data.y};
-							Global.AutoMouseStartTime = currentTime*1000.0f;
-
-							destroyHitObject(i);
-							newSize = objects.size();
-							stop = false;
-							if(newSize != oldSize){
-								i--;
-								oldSize = newSize;
-							}
-						}
-						else if (objects[i]->data.type == 2){
-							Slider* tempslider = dynamic_cast<Slider*>(objects[i]);
-							tempslider->is_hit_at_first = true;
-							objects[i]->data.point = 3;
-							stop = false;
-							clickCombo++;
-							int volume = tempslider->data.volume;
-							if(volume == 0){
-								tempslider->data.volume = tempslider->data.timing.volume;
-								volume = tempslider->data.volume;
-							}
-
-							std::vector<std::string> sounds = getAudioFilenames(currentTimingSettings.sampleSet, currentTimingSettings.sampleIndex, defaultSampleSet, objects[i]->data.edgeSets[0].first, objects[i]->data.edgeSets[0].second, objects[i]->data.edgeSounds[0], objects[i]->data.hindex, objects[i]->data.filename);
-							
-
-							for(int soundIndex = 0; soundIndex < sounds.size(); soundIndex+=2){
-								if(SoundFilesAll.data.count(sounds[soundIndex]) == 1 and SoundFilesAll.loaded[sounds[soundIndex]].value){
-									SetSoundPan(&SoundFilesAll.data[sounds[soundIndex]], 1-clip(objects[i]->data.x / 640.0, 0, 1));
-									SetSoundVolume(&SoundFilesAll.data[sounds[soundIndex]], Global.hitVolume * ((float)volume/100.0f));
-									PlaySound(&SoundFilesAll.data[sounds[soundIndex]]);
-									//std::cout << sounds[0] << " played \n";
-								}
-								else if(SoundFilesAll.data.count(sounds[soundIndex+1]) == 1 and SoundFilesAll.loaded[sounds[soundIndex+1]].value){
-									SetSoundPan(&SoundFilesAll.data[sounds[soundIndex+1]], 1-clip(objects[i]->data.x / 640.0, 0, 1));
-									SetSoundVolume(&SoundFilesAll.data[sounds[soundIndex+1]], Global.hitVolume * ((float)volume/100.0f));
-									PlaySound(&SoundFilesAll.data[sounds[soundIndex+1]]);
-									//std::cout << sounds[1] << " played \n";
-								}
-							}
-
-							objects[i]->data.index = i;
-							objects[i]->update();
-							newSize = objects.size();
-							if(newSize != oldSize){
-								i--;
-								oldSize = newSize;
-							}
-						}
-					}
-					else{
-						if (objects[i]->data.type == 2){
-							objects[i]->data.index = i;
-							objects[i]->update();
-							newSize = objects.size();
-							if(newSize != oldSize){
-								i--;
-								oldSize = newSize;
-							}
-						}
-					}
-				}
-
-				newSize = objects.size();
-				if(newSize != oldSize){
-					i--;
-					oldSize = newSize;
-				}
-			}
-			else{
-				objects[i]->data.index = i;
-				objects[i]->update();
-				newSize = objects.size();
-				if(newSize != oldSize){
-					i--;
-					oldSize = newSize;
-				}
-			}
-		}
-	}*/
-
-	
 	
 	Node * hitObjectNode = objectsLinkedList.getHead();
 	Node * hitObjectNodeNext;
@@ -624,7 +321,7 @@ void GameManager::update(){
 						}
 						maxCombo = std::max(maxCombo, clickCombo);
 						clickCombo = 0;
-						
+						hit0s++;
 						Global.Key1P = false;
 						Global.Key2P = false;
 					}
@@ -632,6 +329,7 @@ void GameManager::update(){
 						hitObject->data.point = 1;
 						score+= 50 + (50 * (std::max(clickCombo-1,0) * difficultyMultiplier * 1)/25);
 						clickCombo++;
+						hit50s++;
 						Global.errorDiv++;
 						Global.errorLast = (long long)((currentTime*1000.0f - hitObject->data.time) * 1000.0f);
 						Global.errorSum += Global.errorLast;
@@ -642,6 +340,7 @@ void GameManager::update(){
 						hitObject->data.point = 2;
 						score+= 100 + (100 * (std::max(clickCombo-1,0) * difficultyMultiplier * 1)/25);
 						clickCombo++;
+						hit100s++;
 						Global.errorDiv++;
 						Global.errorLast = (long long)((currentTime*1000.0f - hitObject->data.time) * 1000.0f);
 						Global.errorSum += Global.errorLast;
@@ -652,6 +351,7 @@ void GameManager::update(){
 						hitObject->data.point = 3;
 						score+= 300 + (300 * (std::max(clickCombo-1,0) * difficultyMultiplier * 1)/25);
 						clickCombo++;
+						hit300s++;
 						Global.errorDiv++;
 						Global.errorLast = (long long)((currentTime*1000.0f - hitObject->data.time) * 1000.0f);
 						Global.errorSum += Global.errorLast;
@@ -764,6 +464,7 @@ void GameManager::update(){
 						hitObject->data.point = 3;
 						score+= 300 + (300 * (std::max(clickCombo-1,0) * difficultyMultiplier * 1)/25);
 						clickCombo++;
+						hit300s++;
 						int volume = hitObject->data.volume;
 						if(volume == 0){
 							hitObject->data.volume = hitObject->data.timing.volume;
@@ -1848,6 +1549,12 @@ void GameManager::loadGame(std::string filename){
 	score = 0;
 	clickCombo = 0;
 	maxCombo = 0;
+	hit300s = 0;
+	hit100s = 0;
+	hit50s = 0;
+	hit0s = 0;
+
+
     //TODO: these are not used right now, USE THEM
 	float hpdrainrate = std::stof(gameFile.configDifficulty["HPDrainRate"]);
 
@@ -1987,8 +1694,8 @@ void GameManager::loadGame(std::string filename){
 
 				//--------------------------------------------- STANDART SLIDER PROCEDURE ---------------------------------------------
 				
-				tempData.timing.beatLength = times[index + 1].beatLength;
-				tempData.timing.sliderSpeedOverride = times[index + 1].sliderSpeedOverride;
+				tempData.timing.beatLength = times[index].beatLength;
+				tempData.timing.sliderSpeedOverride = times[index].sliderSpeedOverride;
 				//std::vector<int> output = sliderPreInit(tempData);
 				int *output = sliderPreInit(tempData);
 

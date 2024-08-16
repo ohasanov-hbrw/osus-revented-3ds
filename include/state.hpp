@@ -47,6 +47,11 @@ private:
     Button close;
     TextBox name;
     TextBox maxCombo;
+    TextBox hit300;
+    TextBox hit100;
+    TextBox hit50;
+    TextBox hit0;
+    TextBox accuracy;
 public:
     ResultsMenu();
     void init() override;
