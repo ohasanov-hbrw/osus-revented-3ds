@@ -60,3 +60,14 @@ int on_extract_entry(const char *filename, void *arg) {
     printf("Extracted: %s (%d of %d)\n", filename, ++i, n);
     return 0;
 }
+
+
+
+bool checkIfExists(const char *name){
+    if (FILE *file = fopen(name, "r")) {
+        fclose(file);
+        return true;
+    } else {
+        return false;
+    }   
+}

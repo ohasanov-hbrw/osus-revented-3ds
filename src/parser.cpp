@@ -38,6 +38,56 @@ GameFile Parser::parseMetadata(std::string filename){
 	return gameFile;
 }
 
+//this here is just a dumb parser, nothing to document here tbh
+std::string Parser::parseBackground(std::string filename){
+	std::ifstream ifs(filename);
+	std::string line;
+	std::string background = "[]";
+	if (ifs.is_open()){
+		while(std::getline(ifs, line)){
+			if(line[line.size()-1] == 13)
+				line.pop_back();
+			if(line[0] == '[' and line[line.size()-1] == ']'){
+				std::string header = line.substr(1);
+				header.pop_back();
+				if(header == "Events"){
+					std::string subLine;
+					while(std::getline(ifs, subLine)){
+						Global.parsedLines++;
+						if(subLine.size() == 0)
+							break;
+						if(subLine[subLine.size()-1] == 13)
+							subLine.pop_back();
+						if(subLine.size() == 0)
+							break;
+						if(subLine[0] == '/' and subLine[1] == '/')
+							continue;
+						if(subLine[0] == ' ')
+							continue;
+
+						Event tempEvent;
+						std::vector<std::string> tempVector;
+						tempVector = parseSeperatedLists(subLine, ',');
+
+						if(tempVector[0] == "0")
+							tempEvent.eventType = 0;
+						else
+							continue;
+
+						tempEvent.startTime = std::stoi(tempVector[1]);
+						if(tempEvent.eventType == 0){
+							tempEvent.filename = tempVector[2].substr(1, tempVector[2].size()-2);
+							background = tempEvent.filename;
+							return background;
+						}
+					}
+				}
+			}
+		}
+	}
+	return background;
+}
+
 
 GameFile Parser::parse(std::string filename){
 	GameFile gameFile;

@@ -10,6 +10,8 @@
 #include <dirent.h>
 #include <gamefile.hpp>
 #include <ctype.h>
+#include <cstring>
+#include <clocale>
 
 PlayMenu::PlayMenu() {
     name = TextBox({320,440}, {520,40}, {0,0,0,0}, "BETA VERSION!", WHITE, 20, 50);
@@ -203,7 +205,19 @@ void MainMenu::init() {
     Global.FrameTime = 0.5;
     Global.useAuto = false;
     volume.location = Global.volume * 100.0f;
+    setlocale(LC_ALL, "en_US.utf8");
 }
+
+void toupper(std::string &s) {
+  for (char &c : s)
+    c = std::toupper(c);
+}
+
+bool strcasecmp2(std::string lhs, std::string rhs) {
+  toupper(lhs); toupper(rhs);
+  return lhs < rhs;
+}
+
 void MainMenu::update() {
     Global.enableMouse = true;
     play.update();
@@ -237,6 +251,11 @@ void MainMenu::update() {
                     //std::cout << p.path().string() << '\n';
                     GameFile geym;
                     geym = parser.parseMetadata(p.path().string());
+                    std::string GameTitle;
+                    std::string GameSetId;
+                    std::string GameVersion;
+                    std::string GameAuthor;
+
                     if(geym.configMetadata.find("BeatmapSetID") == geym.configMetadata.end()){
                         std::cout << "didnt find setid bro, tryin to improvise\n";
                         std::string doublecheck = p.path().parent_path().filename().string();
@@ -264,42 +283,64 @@ void MainMenu::update() {
                             index++;
                             //std::cout << "number: " << number << std::endl;
                         }
-                        if(geym.configMetadata.find("Title") == geym.configMetadata.end()){
-                            std::cout << "didnt find Setid nor title bro, cant do much\n";
-                        }
-                        else{
-                            std::string title = geym.configMetadata["Title"];
-                            if(works){
-                                FILE * pFile;
-                                pFile = fopen(("sdmc:/3ds/database/" + std::to_string(number) + " {" + title + "}" + ".db").c_str()  ,"a");
-                                if(pFile != NULL){
-                                    fprintf(pFile, (p.path().string() + " - found\n").c_str());
-                                    fclose(pFile);
-                                }
-                            }
-                        }
-
+                        GameSetId = std::to_string(number);
                     }
                     else{
-                        std::string title;
-                        if(geym.configMetadata.find("Title") == geym.configMetadata.end()){
-                            std::cout << "didnt title bro, setting as Unknown\n";
-                            title = "Unknown";
+                        GameSetId = geym.configMetadata["BeatmapSetID"];
+                    }
+
+                    if(geym.configMetadata.find("Title") == geym.configMetadata.end()){
+                        std::cout << "didnt title bro, setting as Unknown\n";
+                        GameTitle = "Unknown";
+                    }
+                    else{
+                        GameTitle = geym.configMetadata["Title"];
+                    }
+
+                    if(geym.configMetadata.find("Artist") == geym.configMetadata.end()){
+                        std::cout << "didnt find artist bro, setting as Unknown\n";
+                        GameAuthor = "Unknown";
+                    }
+                    else{
+                        GameAuthor = geym.configMetadata["Artist"];
+                    }
+
+                    std::string filename = "sdmc:/3ds/database/" + GameTitle + " {" + GameSetId + "}.db";
+                    bool firstLine = !checkIfExists((filename).c_str());
+                    FILE * pFile;
+                    pFile = fopen((filename).c_str()  ,"a");
+                    if(pFile != NULL){
+                        if(firstLine){
+                            fprintf(pFile, "---[METADATA]---\n");
+                            fprintf(pFile, (GameTitle + "\n").c_str());
+                            fprintf(pFile, (GameAuthor + "\n").c_str());
+                            fprintf(pFile, (GameSetId + "\n").c_str());
+                            fprintf(pFile, (p.path().parent_path().string() + "/" + "\n").c_str());
+                            fprintf(pFile, (parser.parseBackground(p.path().string()) + "\n").c_str());
+                            fprintf(pFile, "---[FILES]---\n");
                         }
-                        else{
-                            title = geym.configMetadata["Title"];
-                        }
-                        //std::cout << geym.configMetadata["BeatmapSetID"] << std::endl;
-                        FILE * pFile;
-                        pFile = fopen(("sdmc:/3ds/database/" + geym.configMetadata["BeatmapSetID"] + " {" + title + "}" + ".db").c_str()  ,"a");
-                        if(pFile != NULL){
-                            fprintf(pFile, (p.path().string() + " - found\n").c_str());
-                            fclose(pFile);
-                        }
+                        fprintf(pFile, (p.path().string() + "\n").c_str());
+                        fclose(pFile);
                     }
                 }
             }
         }
+
+        Global.Path = "sdmc:/3ds/database";
+
+        std::vector<std::string> files;
+        files = ls(".db");
+        std::sort(files.begin(), files.end(), strcasecmp2);
+        std::string filename = "sdmc:/3ds/database/mainFolder.db";
+        FILE * pFile;
+        pFile = fopen((filename).c_str()  ,"a");
+        if(pFile != NULL){
+            for(int i = 0; i < files.size(); i++){
+                fprintf(pFile, (files[i] + "\n").c_str());
+            }
+            fclose(pFile);
+        }
+        Global.Path = temp;
 
         return;
     }
