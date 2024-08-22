@@ -108,7 +108,8 @@ private:
     int minimumPosition = -240;
     int maximumPosition = -240;
     int graphicalPosition = -240;
-    bool addTest = true;
+    int addStuffAt = -1;
+    int lastStuffAt = -1;
     std::list<MenuItem> locations;
     std::mutex scaryMulti;
     

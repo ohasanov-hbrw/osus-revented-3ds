@@ -1108,27 +1108,62 @@ WipMenu2::WipMenu2() {
 void WipMenu2::init() {
     position = minimumPosition;
     const std::lock_guard<std::mutex> lock(scaryMulti);
-    for(int i = 0; i < 2; i++){
+    for(int i = 0; i < 3; i++){
         MenuItem tempItem;
         tempItem.location = i * 40;
         tempItem.folder = true;
         locations.push_back(tempItem);
     }
-    for(int i = 1; i < 4; i++){
-        MenuItem tempItem;
-        tempItem.location = locations.back().location + 40;
-        tempItem.folder = false;
-        locations.push_back(tempItem);
-    }
     maximumPosition = minimumPosition + locations.back().location;
     std::cout << "initilized the wip2 menu" << std::endl;
+    addStuffAt = 1;
 }
 
 void WipMenu2::update() {
-
     graphicalPosition = position;
 }
 void WipMenu2::render(){
+    if(addStuffAt >= 0){
+        auto beginIt = locations.begin();
+        int i = 0;
+        while(true){
+            if(beginIt == locations.end())
+                break;
+            if(i >= addStuffAt)
+                break;
+            beginIt++;
+            i++;
+        }
+        std::cout << "among us: " << i << std::endl;
+        int locationToAdd = (*beginIt).location;
+        std::cout << "locationToAdd: " << locationToAdd << std::endl;
+        int addedItems = 0;
+        for(int j = 0; j < 2; j++){
+            auto locationIt = beginIt;
+            if(beginIt != locations.end()){
+                locationIt++;
+            }
+            MenuItem tempItem;
+            tempItem.location = locationToAdd + 40;
+            addedItems += 40;
+            locationToAdd += 40;
+            tempItem.folder = false;
+            locations.insert(locationIt, tempItem);
+        }
+        int changedI = i + 2;
+        while(true){
+            if(beginIt == locations.end())
+                break;
+            if(i > changedI){
+                (*beginIt).location += addedItems;
+            }
+            beginIt++;
+            i++;
+        }
+
+        lastStuffAt = addStuffAt;
+        addStuffAt = -1;
+    }
     for(MenuItem n : locations){
         Rectangle r;
         if(n.folder){
