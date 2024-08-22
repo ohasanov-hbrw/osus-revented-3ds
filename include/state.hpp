@@ -4,6 +4,7 @@
 #include "utils.hpp"
 #include "parser.hpp"
 #include <globals.hpp>
+#include <list>
 
 class State {
 public:
@@ -82,11 +83,37 @@ class MainMenu : public State {
 private:
     Button play;
     Button wip;
+    Button wip2;
     Button load;
     TestSlider volume;
     
 public:
     MainMenu();
+
+    void init() override;
+    void render() override;
+    void update() override;
+    void unload() override;
+};
+
+class WipMenu2 : public State {
+private:
+    struct MenuItem{
+        int location = 0;
+        bool folder = true;
+        int folderID = 0;
+        int itemID = 0;
+    };
+    int position;
+    int minimumPosition = -240;
+    int maximumPosition = -240;
+    int graphicalPosition = -240;
+    bool addTest = true;
+    std::list<MenuItem> locations;
+    std::mutex scaryMulti;
+    
+public:
+    WipMenu2();
 
     void init() override;
     void render() override;

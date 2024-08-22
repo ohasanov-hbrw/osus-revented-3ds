@@ -195,7 +195,8 @@ void LoadMenu::unload() {
 
 MainMenu::MainMenu() {
     play = Button({250,420}, {120,60}, {255,135,198,255}, "Play", BLACK, 20);
-    wip = Button({320,320}, {120,60}, {255,135,198,0}, "WIP", BLACK, 20);
+    wip = Button({320,340}, {120,40}, {255,135,198,0}, "WIP", BLACK, 20);
+    wip2 = Button({320,300}, {120,40}, {255,135,198,0}, "WIP2", BLACK, 20);
     load = Button({390,420}, {120,60}, {255,135,198,255}, "Load", BLACK, 20);
     volume = TestSlider({510,460}, {240,20}, BLACK, PURPLE, WHITE, WHITE);
 }
@@ -222,6 +223,7 @@ void MainMenu::update() {
     Global.enableMouse = true;
     play.update();
     wip.update();
+    wip2.update();
     load.update();
     //test.update();
     if(wip.action){
@@ -360,6 +362,11 @@ void MainMenu::update() {
         Global.CurrentState->init();
         return;
     }
+    else if(wip2.action){
+        Global.CurrentState->unload();
+        Global.CurrentState.reset(new WipMenu2());
+        Global.CurrentState->init();
+    }
 
     if(IsKeyDown(KEY_SELECT ))
         volume.update();
@@ -375,6 +382,7 @@ void MainMenu::render() {
     DrawTextureCenter(&Global.OsusLogo, 320, 200, 400.0 / (float)Global.OsusLogo.width, WHITE);
     play.render();
     wip.render();
+    wip2.render();
     load.render();
     
     if(IsKeyDown(KEY_SELECT ))
@@ -1090,4 +1098,59 @@ void ResultsMenu::update() {
 }
 void ResultsMenu::unload() {
 
+}
+
+
+WipMenu2::WipMenu2() {
+
+}
+
+void WipMenu2::init() {
+    position = minimumPosition;
+    const std::lock_guard<std::mutex> lock(scaryMulti);
+    for(int i = 0; i < 2; i++){
+        MenuItem tempItem;
+        tempItem.location = i * 40;
+        tempItem.folder = true;
+        locations.push_back(tempItem);
+    }
+    for(int i = 1; i < 4; i++){
+        MenuItem tempItem;
+        tempItem.location = locations.back().location + 40;
+        tempItem.folder = false;
+        locations.push_back(tempItem);
+    }
+    maximumPosition = minimumPosition + locations.back().location;
+    std::cout << "initilized the wip2 menu" << std::endl;
+}
+
+void WipMenu2::update() {
+
+    graphicalPosition = position;
+}
+void WipMenu2::render(){
+    for(MenuItem n : locations){
+        Rectangle r;
+        if(n.folder){
+            r.x = 325;
+            r.y = (n.location - 18) - graphicalPosition;
+            r.width = 315;
+            r.height = 36;
+        }
+        else{
+            r.x = 330;
+            r.y = (n.location - 18) - graphicalPosition;
+            r.width = 310;
+            r.height = 36;
+        }
+        if(r.y + r.width < -10 or r.y > 490)
+            continue;
+        DrawRectangleRec(ScaleRect(r), WHITE);
+    }
+    
+}
+
+void WipMenu2::unload() {
+    locations.clear();
+    locations = std::list<MenuItem>();
 }
