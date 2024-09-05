@@ -15,8 +15,12 @@ bool IsKeyReleased(int index){
 
 void PollInputEvents(){
     hidScanInput();
-    Global.lastTouch = (Global.touch.px != 0 && Global.touch.py != 0);
-    hidTouchRead(&Global.touch);
+    Global.lastTouch = (Global.lastTouchPos.px != 0 && Global.lastTouchPos.py != 0);
+    hidTouchRead(&Global.lastTouchPos);
+    if(Global.lastTouchPos.px != 0 && Global.lastTouchPos.py != 0){
+        Global.touch.px = Global.lastTouchPos.px;
+        Global.touch.py = Global.lastTouchPos.py;
+    }
     
 	Global.ds_kDown = hidKeysDown();
 	Global.ds_kHeld = hidKeysHeld();
@@ -46,12 +50,12 @@ int GetMouseY(){
 bool IsMouseButtonDown(int index){
     if(index == SDL_BUTTON_RIGHT)
         return false;
-    return Global.touch.px != 0 && Global.touch.py != 0;
+    return Global.lastTouchPos.px != 0 && Global.lastTouchPos.py != 0;
 }
 bool IsMouseButtonPressed(int index){
     if(index == SDL_BUTTON_RIGHT)
         return false;
-    if(Global.lastTouch == false && Global.touch.px != 0 && Global.touch.py != 0){
+    if(Global.lastTouch == false && Global.lastTouchPos.px != 0 && Global.lastTouchPos.py != 0){
         return true;
     }
     return false;
@@ -59,7 +63,8 @@ bool IsMouseButtonPressed(int index){
 bool IsMouseButtonReleased(int index){
     if(index == SDL_BUTTON_RIGHT)
         return false;
-    if(Global.lastTouch == true && Global.touch.px == 0 && Global.touch.py == 0){
+    if(Global.lastTouch == true && Global.lastTouchPos.px == 0 && Global.lastTouchPos.py == 0){
         return true;
     }
+    return false;
 }

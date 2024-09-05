@@ -114,6 +114,8 @@ private:
     int lastStuffAt = -1;
     bool canAddStuff = false;
     bool canRemoveStuff = false;
+    std::vector<std::string> folderNames;
+    std::vector<std::string> itemNames;
     float accel = 0.0f;
     std::list<MenuItem> locations;
     std::mutex scaryMulti;

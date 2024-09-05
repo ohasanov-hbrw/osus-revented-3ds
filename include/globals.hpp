@@ -177,6 +177,8 @@ struct Globals {
     bool touchScreenTouchEnabled = true;
 
     touchPosition touch;
+    touchPosition lastTouchPos;
+
     bool lastTouch = false;
 
     C3D_RenderTarget* window;

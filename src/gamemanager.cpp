@@ -2030,7 +2030,7 @@ void GameManager::loadGameTextures(){
 					if(backgroundTextures.data[gameFile.events[j].filename].width != 0){
 						backgroundTextures.loaded[gameFile.events[j].filename].value = true;
 						std::cout << "Loaded: Background with filename: " << gameFile.events[j].filename << std::endl;
-						SetTextureFilter(&backgroundTextures.data["gameFile.events[j].filename"], TEXTURE_FILTER_BILINEAR) ;
+						SetTextureFilter(&backgroundTextures.data[gameFile.events[j].filename], TEXTURE_FILTER_BILINEAR) ;
 					}
 					
 					//std::cout << "*. no backgroundss *.\n";

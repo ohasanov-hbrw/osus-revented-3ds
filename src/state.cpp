@@ -1112,7 +1112,12 @@ void WipMenu2::init() {
         MenuItem tempItem;
         tempItem.location = i * 40;
         tempItem.folder = true;
+        tempItem.folderID = i;
         locations.push_back(tempItem);
+        folderNames.push_back("Folder: " + std::to_string(i));
+    }
+    for(int i = 0; i < 6; i++){
+        itemNames.push_back("Item: " + std::to_string(i));
     }
     maximumPosition = minimumPosition + locations.back().location;
     std::cout << "initilized the wip2 menu" << std::endl;
@@ -1171,9 +1176,8 @@ void WipMenu2::update() {
         addClamping = false;
     }
     if(Global.Key1R and Global.MouseInFocus and CheckCollisionPointRec(Global.MousePosition, Rectangle{320,-2000,320,6000})){
-        accel = (Global.MousePosition.y - lastMouse) / -1.0f;
+        accel += (Global.MousePosition.y - lastMouse) / -1.0f;
     }
-
 
     if(Global.MouseInFocus and CheckCollisionPointRec(Global.MousePosition, Rectangle{320,-2000,320,6000}))
         lastMouse = Global.MousePosition.y;
@@ -1290,6 +1294,8 @@ void WipMenu2::render(){
             addedItems += 40;
             locationToAdd -= 40;
             tempItem.folder = false;
+            tempItem.folderID = (*beginIt).folderID;
+            tempItem.itemID = j;
             locations.insert(locationIt, tempItem);
         }
         int changedI = i + addNumber;
@@ -1318,6 +1324,19 @@ void WipMenu2::render(){
         lastStuffAt = addStuffAt;
         addStuffAt = -1;
     }
+    Rectangle rect;
+    rect.x = 322;
+    rect.y = 240 -  18;
+    rect.width =  2;
+    rect.height = 36;
+    DrawRectangleRec(ScaleRect(rect), {200, 120, 200, 128});
+   
+    rect.x = 5;
+    rect.y = 5;
+    rect.width =  315;
+    rect.height = 470;
+
+    DrawRectangleRec(ScaleRect(rect), {70, 30, 70, 170});
     for(MenuItem n : locations){
         Rectangle r;
         if(n.folder){
@@ -1336,9 +1355,21 @@ void WipMenu2::render(){
             continue;
         if(n.folder){
             DrawRectangleRec(ScaleRect(r), {255, 255, 255, 255});
+            std::string name = "unknown";
+            if(n.folderID >= 0  && n.folderID < folderNames.size()){
+                name = folderNames[n.folderID];
+            }
+            //DrawTextLeft(name.c_str(), r.x + 10, r.y + 18, 20.05, BLACK);
+            DrawTextEx(&Global.DefaultFont, name.c_str(), {(int)ScaleCordX(r.x + 10), (int)ScaleCordY(r.y + 18 - 10)}, Scale(20.05), Scale(2), BLACK);
         }
         else{
             DrawRectangleRec(ScaleRect(r), {200, 150, 200, 255});
+            std::string name = "unknown";
+            if(n.itemID >= 0  && n.itemID < itemNames.size()){
+                name = itemNames[n.itemID];
+            }
+            //DrawTextLeft(name.c_str(), r.x + 10, r.y + 18, 20.05, BLACK);
+            DrawTextEx(&Global.DefaultFont, name.c_str(), {(int)ScaleCordX(r.x + 10), (int)ScaleCordY(r.y + 18 - 10)}, Scale(20.05), Scale(2), BLACK);
         }
     }
     
@@ -1347,4 +1378,10 @@ void WipMenu2::render(){
 void WipMenu2::unload() {
     locations.clear();
     locations = std::list<MenuItem>();
+
+    folderNames.clear();
+    folderNames = std::vector<std::string>();
+
+    itemNames.clear();
+    itemNames = std::vector<std::string>();
 }
