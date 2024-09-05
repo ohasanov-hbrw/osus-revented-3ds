@@ -1108,7 +1108,7 @@ WipMenu2::WipMenu2() {
 void WipMenu2::init() {
     position = minimumPosition;
     const std::lock_guard<std::mutex> lock(scaryMulti);
-    for(int i = 0; i < 3; i++){
+    for(int i = 0; i < 16; i++){
         MenuItem tempItem;
         tempItem.location = i * 40;
         tempItem.folder = true;
@@ -1116,14 +1116,152 @@ void WipMenu2::init() {
     }
     maximumPosition = minimumPosition + locations.back().location;
     std::cout << "initilized the wip2 menu" << std::endl;
-    addStuffAt = 1;
+    removeStuffAt = -1;
+    addStuffAt = -1;
+    lastStuffAt = -1;
+    canAddStuff = true;
+    canRemoveStuff = false;
 }
 
 void WipMenu2::update() {
-    graphicalPosition = position;
+    
+    if(Global.Key2P && addStuffAt == -1 && removeStuffAt == -1){
+        removeStuffAt = lastStuffAt;
+        addStuffAt = (lastStuffAt + 1) % 16;
+    }
+
+    bool addClamping = true;
+    accel += (float)(Global.FrameTime / 1000.0f) * (float)(120.0f * -Global.Wheel);
+    if(accel > 120.0f)
+        accel = 120.0f;
+    if(accel < -120.0f)
+        accel = -120.0f;
+    if(accel < 0.01f and accel > -0.01f){
+        accel = 0.0f;
+    }
+    if(!(accel < 0.05f and accel > -0.05f)){
+        addClamping = false;
+    }
+    
+    float clampAccel = 0;
+    float clampingPosition = graphicalPosition;
+    if(addClamping){
+        while(clampingPosition <= 0.0f)
+            clampingPosition += 40.0f;
+        while(clampingPosition >= 40.0f)
+            clampingPosition -= 40.0f;
+        if(clampingPosition >= 20.0f){
+            clampAccel = (float)(Global.FrameTime / 1000.0f) * (float)(10.0f * (40.0f - clampingPosition));
+            if(clampingPosition + clampAccel >= 40.0f){
+                clampAccel = 40.0f - clampingPosition;
+            }
+        }
+        else{
+            clampAccel = -(float)(Global.FrameTime / 1000.0f) * (float)(10.0f * (clampingPosition));
+            if(clampingPosition - clampAccel <= 0.0f){
+                clampAccel = -clampingPosition;
+            }
+        }
+    }
+    if(Global.Key1P){
+        lastMouse = Global.MousePosition.y;
+    }
+    if(Global.Key1D and Global.MouseInFocus and CheckCollisionPointRec(Global.MousePosition, Rectangle{320,-2000,320,6000})){
+        accel = (Global.MousePosition.y - lastMouse) / -1.0f;
+        addClamping = false;
+    }
+    if(Global.Key1R and Global.MouseInFocus and CheckCollisionPointRec(Global.MousePosition, Rectangle{320,-2000,320,6000})){
+        accel = (Global.MousePosition.y - lastMouse) / -1.0f;
+    }
+
+
+    if(Global.MouseInFocus and CheckCollisionPointRec(Global.MousePosition, Rectangle{320,-2000,320,6000}))
+        lastMouse = Global.MousePosition.y;
+
+
+    graphicalPosition += accel;
+    if(addClamping)
+        graphicalPosition += clampAccel;
+
+    if(graphicalPosition < minimumPosition){
+        graphicalPosition = minimumPosition;
+        accel = 0; 
+        clampAccel = 0;
+    }
+    if(graphicalPosition > maximumPosition){
+        graphicalPosition = maximumPosition; 
+        accel = 0; 
+        clampAccel = 0;
+    }
+
+
+    position = graphicalPosition;
+    if(position < minimumPosition){
+        position = minimumPosition; 
+    }
+    if(position > maximumPosition){
+        position = maximumPosition; 
+    }
+    
+
+    accel += ((-accel) / 2.0f) * ((float)(Global.FrameTime / 1000.0f) * 8.0f);
 }
 void WipMenu2::render(){
-    if(addStuffAt >= 0){
+    if(removeStuffAt >= 0 and canRemoveStuff == true){
+        auto beginIt = locations.begin();
+        int i = 0;
+        while(true){
+            if(beginIt == locations.end())
+                break;
+            if(i >= removeStuffAt)
+                break;
+            beginIt++;
+            i++;
+        }
+        std::cout << "among us: " << i << std::endl;
+        int removedItems = 0;
+        while(true){
+            auto locationIt = beginIt;
+            if(beginIt != locations.end()){
+                locationIt++;
+            }
+            else{
+                break;
+            }
+            if(locationIt == locations.end()){
+                break;
+            }
+            if((*locationIt).folder == true){
+                break;
+            }
+            removedItems += 40;
+            locations.erase(locationIt);
+        }
+        while(true){
+            if(beginIt == locations.end())
+                break;
+            if(i > removeStuffAt){
+                (*beginIt).location -= removedItems;
+            }
+            beginIt++;
+            i++;
+        }
+        maximumPosition = minimumPosition + locations.back().location;
+        if(graphicalPosition > maximumPosition){
+            graphicalPosition = maximumPosition; 
+        }
+        position = graphicalPosition;
+        if(position < minimumPosition){
+            position = minimumPosition; 
+        }
+        if(position > maximumPosition){
+            position = maximumPosition; 
+        }
+        canAddStuff = true;
+        canRemoveStuff = false;
+        removeStuffAt = -1;
+    }
+    if(addStuffAt >= 0 and canAddStuff == true){
         auto beginIt = locations.begin();
         int i = 0;
         while(true){
@@ -1136,21 +1274,25 @@ void WipMenu2::render(){
         }
         std::cout << "among us: " << i << std::endl;
         int locationToAdd = (*beginIt).location;
+
         std::cout << "locationToAdd: " << locationToAdd << std::endl;
         int addedItems = 0;
-        for(int j = 0; j < 2; j++){
+        
+        int addNumber = (rand() % 6) + 1;
+        locationToAdd += 40 * addNumber;
+        for(int j = 0; j < addNumber; j++){
             auto locationIt = beginIt;
             if(beginIt != locations.end()){
                 locationIt++;
             }
             MenuItem tempItem;
-            tempItem.location = locationToAdd + 40;
+            tempItem.location = locationToAdd;
             addedItems += 40;
-            locationToAdd += 40;
+            locationToAdd -= 40;
             tempItem.folder = false;
             locations.insert(locationIt, tempItem);
         }
-        int changedI = i + 2;
+        int changedI = i + addNumber;
         while(true){
             if(beginIt == locations.end())
                 break;
@@ -1160,7 +1302,19 @@ void WipMenu2::render(){
             beginIt++;
             i++;
         }
-
+        maximumPosition = minimumPosition + locations.back().location;
+        if(graphicalPosition > maximumPosition){
+            graphicalPosition = maximumPosition; 
+        }
+        position = graphicalPosition;
+        if(position < minimumPosition){
+            position = minimumPosition; 
+        }
+        if(position > maximumPosition){
+            position = maximumPosition; 
+        }
+        canAddStuff = false;
+        canRemoveStuff = true;
         lastStuffAt = addStuffAt;
         addStuffAt = -1;
     }
@@ -1180,7 +1334,12 @@ void WipMenu2::render(){
         }
         if(r.y + r.width < -10 or r.y > 490)
             continue;
-        DrawRectangleRec(ScaleRect(r), WHITE);
+        if(n.folder){
+            DrawRectangleRec(ScaleRect(r), {255, 255, 255, 255});
+        }
+        else{
+            DrawRectangleRec(ScaleRect(r), {200, 150, 200, 255});
+        }
     }
     
 }

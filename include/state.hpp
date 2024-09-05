@@ -104,12 +104,17 @@ private:
         int folderID = 0;
         int itemID = 0;
     };
+    float lastMouse = 0.0f;
     int position;
     int minimumPosition = -240;
     int maximumPosition = -240;
-    int graphicalPosition = -240;
+    float graphicalPosition = -240;
     int addStuffAt = -1;
+    int removeStuffAt = -1;
     int lastStuffAt = -1;
+    bool canAddStuff = false;
+    bool canRemoveStuff = false;
+    float accel = 0.0f;
     std::list<MenuItem> locations;
     std::mutex scaryMulti;
     
