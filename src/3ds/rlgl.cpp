@@ -248,17 +248,17 @@ Texture2D LoadTextureFromImage(Image *image, bool vram){
 
         u32 w_pow2 = GetNextPowerOf2(texture.subtex.width);
 		u32 h_pow2 = GetNextPowerOf2(texture.subtex.height);
-        std::cout << "t w " << w_pow2 << " h " << h_pow2 << std::endl;
+        //std::cout << "t w " << w_pow2 << " h " << h_pow2 << std::endl;
 
 		texture.subtex.left = 0.f;
 		texture.subtex.top = 1.f;
 		texture.subtex.right = (static_cast<float>(image->width) /static_cast<float>(w_pow2));
 		texture.subtex.bottom = (1.0 - (static_cast<float>(image->height) / static_cast<float>(h_pow2)));
         
-        std::cout << "s w " << texture.subtex.width << " h " << texture.subtex.height << std::endl;
+        //std::cout << "s w " << texture.subtex.width << " h " << texture.subtex.height << std::endl;
 
 
-        std::cout << "TEXTURE INIT IN GPU VRAM\n";
+        //std::cout << "TEXTURE INIT IN GPU VRAM\n";
         //SleepInMs(200);
 
         vram = false;
@@ -268,13 +268,13 @@ Texture2D LoadTextureFromImage(Image *image, bool vram){
         else
             texture.id = C3D_TexInit(&texture.tex, static_cast<u16>(w_pow2), static_cast<u16>(h_pow2), _determineHardwareFormat(image->format));
 
-        std::cout << "TEXTURE INIT IN GPU DONE\n";
+        //std::cout << "TEXTURE INIT IN GPU DONE\n";
         //SleepInMs(200);
 		//memset(texture.tex.data, 0, texture.tex.size);
         //GSPGPU_FlushDataCache(data, texture.tex.width * texture.tex.height * GetPixelDataSize(1, 1, image.format));
         //std::cout << "MEMSET DONE\n";
         //C3D_TexFlush(&texture.tex);
-        std::cout << _determineBPP(_determineHardwareFormat(image->format)) << " Bpp - " << texture.tex.size << " bytes allocated" << std::endl;
+        //std::cout << _determineBPP(_determineHardwareFormat(image->format)) << " Bpp - " << texture.tex.size << " bytes allocated" << std::endl;
         //SleepInMs(100);
         //C3D_TexLoadImage(&texture.tex, image.data, GPU_TEXFACE_2D, 1);
 
@@ -365,7 +365,7 @@ Texture2D LoadTextureFromImage(Image *image, bool vram){
             linearFree(tiled_output);
         }
 
-		std::cout << "TEXTURE COPY DONE\n";
+		//std::cout << "TEXTURE COPY DONE\n";
         //SleepInMs(100);
 		
 		texture.tex.border = 0x00000000;
@@ -447,7 +447,7 @@ void ImageResize(Image *image, int newWidth, int newHeight){
 Texture2D LoadTexture(const char *fileName){
     //SleepInMs(200);
     Texture2D texture = { 0 };
-    std::cout << "I " << fileName << std::endl;
+    //std::cout << "I " << fileName << std::endl;
     Image image = LoadImage(fileName);
     if(image.width <= 1 || image.height <= 1){
         texture.id = 0;
@@ -460,25 +460,26 @@ Texture2D LoadTexture(const char *fileName){
         if(image.width / divider > 128 or image.height / divider > 128){
             divider += 1;
             std::cout << "TOO BIG OF AN IMAGE!" << std::endl;
-            std::cout << "RESIZING TO" << (int)(image.height / divider) << " x " << (int)(image.width / divider) << std::endl;
+            
         }
         else{
             break;
         }
     }
-    std::cout << "resize" << std::endl;
+    std::cout << "RESIZING TO" << (int)(image.height / divider) << " x " << (int)(image.width / divider) << std::endl;
+    //std::cout << "resize" << std::endl;
     //SleepInMs(200);
     int resizeW = (int)(image.width / divider);
     int resizeH = (int)(image.height / divider);
     ImageResize(&image, resizeW, resizeH);
-    std::cout << "T " << image.width << " " << image.height << std::endl;
+    //std::cout << "T " << image.width << " " << image.height << std::endl;
     
     if (image.data != NULL){
-        std::cout << "loadtex" << std::endl;
+        //std::cout << "loadtex" << std::endl;
         //SleepInMs(200);
         texture = LoadTextureFromImage(&image);
         texture.id = 1;
-        std::cout << "unloadim" << std::endl;
+        //std::cout << "unloadim" << std::endl;
         //SleepInMs(200);
         UnloadImage(&image);
     }
@@ -492,7 +493,7 @@ Image LoadImage(const char *fileName){
     Image image = { 0 };
     int dataSize = 0;
     unsigned char *fileData = LoadFileData(fileName, &dataSize);
-    std::cout << "ISize:" << dataSize << std::endl;
+    //std::cout << "ISize:" << dataSize << std::endl;
     // Loading image from memory data
     if (fileData != NULL){
         image = LoadImageFromMemory(GetFileExtension(fileName), fileData, dataSize);
@@ -1196,8 +1197,8 @@ RenderTexture2D LoadRenderTexture(int width, int height, bool vram){
         u32 w_pow2 = GetNextPowerOf2(target.texture.subtex.width);
 		u32 h_pow2 = GetNextPowerOf2(target.texture.subtex.height);
 
-        std::cout << w_pow2 << " w_pow2  -  ";
-        std::cout << h_pow2 << " h_pow2  -  ";
+        //std::cout << w_pow2 << " w_pow2  -  ";
+        //std::cout << h_pow2 << " h_pow2  -  ";
         
 		target.texture.subtex.left = 0.f;
 		target.texture.subtex.top = 1.f;
@@ -1269,6 +1270,11 @@ void rlEnableDepthTest(){
     C2D_Flush(); 
 }
 
+void rlEnableDepthTest2(){
+    C3D_DepthTest(true, GPU_GEQUAL, GPU_WRITE_ALL);
+    C2D_Flush(); 
+}
+
 void DrawCircleWithDepth(Vector2 center, float radius, int segments, float depth, Color color){
     //C2D_DrawCircleSolid(center.x, center.y, depth, radius, C2D_Color32(color.r, color.g, color.b, color.a));
     if (radius <= 0.0f) radius = 0.1f;  // Avoid div by zero
@@ -1309,7 +1315,53 @@ void DrawCircleWithDepth(Vector2 center, float radius, int segments, float depth
         //rlVertex2f(center.x + cosf(DEG2RAD*angle)*radius, center.y + sinf(DEG2RAD*angle)*radius);
         u32 c = C2D_Color32(color.r, color.g, color.b, color.a);
         C2D_DrawTriangle(center.x, center.y, c, center.x + cosf(DEG2RAD*(angle + stepLength))*radius, center.y + sinf(DEG2RAD*(angle + stepLength))*radius, c, center.x + cosf(DEG2RAD*angle)*radius, center.y + sinf(DEG2RAD*angle)*radius, c, depth);
-        C2D_Flush(); 
+        //C2D_Flush(); 
+        angle += stepLength;
+    }
+    C2D_Flush();  //test
+}
+void DrawCircleWithDepthGrad(Vector2 center, float radius, int segments, float depth, Color color, Color color2){
+    //C2D_DrawCircleSolid(center.x, center.y, depth, radius, C2D_Color32(color.r, color.g, color.b, color.a));
+    if (radius <= 0.0f) radius = 0.1f;  // Avoid div by zero
+
+    float startAngle = 0;
+    float endAngle = 360;
+    // Function expects (endAngle > startAngle)
+    if (endAngle < startAngle)
+    {
+        // Swap values
+        float tmp = startAngle;
+        startAngle = endAngle;
+        endAngle = tmp;
+    }
+
+    int minSegments = (int)ceilf((endAngle - startAngle)/90);
+
+    if (segments < minSegments)
+    {
+        // Calculate the maximum angle between segments based on the error rate (usually 0.5f)
+        float th = acosf(2*powf(1 - 0.5f/radius, 2) - 1);
+        segments = (int)((endAngle - startAngle)*ceilf(2*PI/th)/360);
+
+        if (segments <= 0) segments = minSegments;
+    }
+
+    startAngle = startAngle + 360 / segments;
+    endAngle = endAngle + 360 / segments;
+
+
+    float stepLength = (endAngle - startAngle)/(float)segments;
+    float angle = startAngle;
+    for (int i = 0; i < segments; i++){
+        //rlColor4ub(color.r, color.g, color.b, color.a);
+
+        //rlVertex2f(center.x, center.y);
+        //rlVertex2f(center.x + cosf(DEG2RAD*(angle + stepLength))*radius, center.y + sinf(DEG2RAD*(angle + stepLength))*radius);
+        //rlVertex2f(center.x + cosf(DEG2RAD*angle)*radius, center.y + sinf(DEG2RAD*angle)*radius);
+        u32 c = C2D_Color32(color2.r, color2.g, color2.b, color2.a);
+        u32 cs = C2D_Color32(color.r, color.g, color.b, color.a);
+        C2D_DrawTriangle(center.x, center.y, cs, center.x + cosf(DEG2RAD*(angle + stepLength))*radius, center.y + sinf(DEG2RAD*(angle + stepLength))*radius, c, center.x + cosf(DEG2RAD*angle)*radius, center.y + sinf(DEG2RAD*angle)*radius, c, depth);
+        //C2D_Flush(); 
         angle += stepLength;
     }
     C2D_Flush();  //test
@@ -1356,6 +1408,24 @@ void DrawTextureEx(Texture2D *texture, Vector2 position, float rotation, float s
     else{
         std::cout << "nah bro no rotation in drawex\n";
     }
+    C2D_Flush();  //test
+}
+
+void DrawTextureExDepth(Texture2D *texture, Vector2 position, float depth, float scale, Color tint){
+    if(texture->id == 0)
+        return;
+    C2D_Image image;
+    image.tex = &texture->tex;
+    image.subtex = &texture->subtex;
+    C2D_ImageTint c2dTint;
+    //Maybe needs fixing, idk how blend and alpha work
+    c2dTint.corners[0] = {C2D_Color32(tint.r, tint.g, tint.b, tint.a), 1.0f};
+    c2dTint.corners[1] = {C2D_Color32(tint.r, tint.g, tint.b, tint.a), 1.0f};
+    c2dTint.corners[2] = {C2D_Color32(tint.r, tint.g, tint.b, tint.a), 1.0f};
+    c2dTint.corners[3] = {C2D_Color32(tint.r, tint.g, tint.b, tint.a), 1.0f};
+
+    C2D_Prepare();
+    C2D_DrawImageAt(image, position.x, position.y, depth, &c2dTint, scale, scale);
     C2D_Flush();  //test
 }
 

@@ -920,78 +920,207 @@ void Slider::render(){
     data.textureLoaded = IsRenderTextureReady(&sliderTexture);
     rlDisableDepthTest();
     //rlCustomDepthFunc(true);
+    int maxDrawAtTime = 10;
+    int drawn = 0;
     if(data.textureLoaded and data.textureReady){
         legacyRender = true;
         if(legacyRender){   
-            if(clampedBigFade <= 0.7f and renderPoints.size() > 0 and last != renderPoints.size() - 1){
-                BeginTextureMode(&sliderTexture);
-                rlEnableDepthTest(); 
-                //BeginBlendMode(BLEND_ALPHA_PREMUL);
-                bool draw = true;
-                if(renderPoints.size() > 0){
-                    int amogusLast = last;
-                    for(int i = last; i < std::min(((float)renderPoints.size() * (clampedFade * 2.0f)), (float)(renderPoints.size())); i+=gm->skip){
-                        draw = false;
-                        if(i < renderPoints.size() and renderPoints[i].x > -150 and renderPoints[i].x < 790 and renderPoints[i].y > -150 and renderPoints[i].y < 630){
-                            if(true){
-                                Vector2 centerCoord = {(renderPoints[i].x+4 * Global.sliderTexSize-minX + gm->circlesize/2.0f) * Global.sliderTexSize, (((renderPoints[i].y+4 * Global.sliderTexSize-minY + gm->circlesize/2.0f) * Global.sliderTexSize))};
-                                DrawCircleWithDepth(centerCoord, ((gm->circlesize/2.0f) * 0.98)  * Global.sliderTexSize, Global.circleSector, 0.2f, {255, 255, 255, 255});
-                                last = std::max(i, 0);
-                                if(last == renderPoints.size() - 1){
-                                    last = renderPoints.size();
-                                }
-                                if(i + gm->skip >= renderPoints.size()){
-                                    Vector2 centerCoord = {(renderPoints[renderPoints.size()-1].x+4 * Global.sliderTexSize-minX + gm->circlesize/2.0f) * Global.sliderTexSize, (((renderPoints[renderPoints.size()-1].y+4 * Global.sliderTexSize-minY + gm->circlesize/2.0f) * Global.sliderTexSize))};
+            bool polygonalRender = false;
+            if(polygonalRender){
+                if(clampedBigFade <= 0.7f and renderPoints.size() > 0 and last != renderPoints.size() - 1){
+                    BeginTextureMode(&sliderTexture);
+                    rlEnableDepthTest(); 
+                    //BeginBlendMode(BLEND_ALPHA_PREMUL);
+                    bool draw = true;
+                    if(renderPoints.size() > 0){
+                        int amogusLast = last;
+                        for(int i = last; i < std::min(((float)renderPoints.size() * (clampedFade * 2.0f)), (float)(renderPoints.size())); i+=gm->skip){
+                            draw = false;
+                            if(i < renderPoints.size() and renderPoints[i].x > -150 and renderPoints[i].x < 790 and renderPoints[i].y > -150 and renderPoints[i].y < 630){
+                                if(true){
+                                    Vector2 centerCoord = {(renderPoints[i].x+4 * Global.sliderTexSize-minX + gm->circlesize/2.0f) * Global.sliderTexSize, (((renderPoints[i].y+4 * Global.sliderTexSize-minY + gm->circlesize/2.0f) * Global.sliderTexSize))};
                                     DrawCircleWithDepth(centerCoord, ((gm->circlesize/2.0f) * 0.98)  * Global.sliderTexSize, Global.circleSector, 0.2f, {255, 255, 255, 255});
+                                    last = std::max(i, 0);
+                                    if(last == renderPoints.size() - 1){
+                                        last = renderPoints.size();
+                                    }
+                                    if(i + gm->skip >= renderPoints.size()){
+                                        Vector2 centerCoord = {(renderPoints[renderPoints.size()-1].x+4 * Global.sliderTexSize-minX + gm->circlesize/2.0f) * Global.sliderTexSize, (((renderPoints[renderPoints.size()-1].y+4 * Global.sliderTexSize-minY + gm->circlesize/2.0f) * Global.sliderTexSize))};
+                                        DrawCircleWithDepth(centerCoord, ((gm->circlesize/2.0f) * 0.98)  * Global.sliderTexSize, Global.circleSector, 0.2f, {255, 255, 255, 255});
+                                    }
                                 }
                             }
                         }
-                    }
-                    
-                    rlSetBlendFactorsSeparate(RL_SRC_ALPHA, RL_ONE_MINUS_SRC_ALPHA, RL_SRC_ALPHA, RL_ONE_MINUS_SRC_ALPHA, RL_MIN, RL_MIN);
-                    rlSetBlendMode(RL_BLEND_CUSTOM_SEPARATE);
-                    for(int i = amogusLast; i < std::min(((float)renderPoints.size() * (clampedFade * 2.0f)), (float)(renderPoints.size())); i+=gm->skip){
-                        draw = false;
-                        if(i < renderPoints.size() and renderPoints[i].x > -150 and renderPoints[i].x < 790 and renderPoints[i].y > -150 and renderPoints[i].y < 630){
-                            if(true){
-                                Vector2 centerCoord = {(renderPoints[i].x+4 * Global.sliderTexSize-minX + gm->circlesize/2.0f) * Global.sliderTexSize, (((renderPoints[i].y+4 * Global.sliderTexSize-minY + gm->circlesize/2.0f) * Global.sliderTexSize))};
-                                DrawCircleWithDepth(centerCoord, ((gm->circlesize/2.0f) * 0.85)  * Global.sliderTexSize, Global.circleSector, 0.5f, Fade(Color{(unsigned char)((float)data.colour[0]*0.2f),(unsigned char)((float)data.colour[1]*0.2f),(unsigned char)((float)data.colour[2]*0.2f)}, 1.0f));//{2, 0, 4, 128});
-                                amogusLast = std::max(i, 0);
-                                if(amogusLast == renderPoints.size() - 1){
-                                    amogusLast = renderPoints.size();
-                                }
-                                if(i + gm->skip >= renderPoints.size()){
-                                    Vector2 centerCoord = {(renderPoints[renderPoints.size()-1].x+4 * Global.sliderTexSize-minX + gm->circlesize/2.0f) * Global.sliderTexSize, (((renderPoints[renderPoints.size()-1].y+4 * Global.sliderTexSize-minY + gm->circlesize/2.0f) * Global.sliderTexSize))};
-                                    DrawCircleWithDepth(centerCoord, ((gm->circlesize/2.0f) * 0.85)  * Global.sliderTexSize, Global.circleSector, 0.5f, Fade(Color{(unsigned char)((float)data.colour[0]*0.2f),(unsigned char)((float)data.colour[1]*0.2f),(unsigned char)((float)data.colour[2]*0.2f)}, 1.0f));//{2, 0, 4, 128});
+                        
+                        rlSetBlendFactorsSeparate(RL_SRC_ALPHA, RL_ONE_MINUS_SRC_ALPHA, RL_SRC_ALPHA, RL_ONE_MINUS_SRC_ALPHA, RL_MIN, RL_MIN);
+                        rlSetBlendMode(RL_BLEND_CUSTOM_SEPARATE);
+                        for(int i = amogusLast; i < std::min(((float)renderPoints.size() * (clampedFade * 2.0f)), (float)(renderPoints.size())); i+=gm->skip){
+                            draw = false;
+                            if(i < renderPoints.size() and renderPoints[i].x > -150 and renderPoints[i].x < 790 and renderPoints[i].y > -150 and renderPoints[i].y < 630){
+                                if(true){
+                                    Vector2 centerCoord = {(renderPoints[i].x+4 * Global.sliderTexSize-minX + gm->circlesize/2.0f) * Global.sliderTexSize, (((renderPoints[i].y+4 * Global.sliderTexSize-minY + gm->circlesize/2.0f) * Global.sliderTexSize))};
+                                    DrawCircleWithDepth(centerCoord, ((gm->circlesize/2.0f) * 0.85)  * Global.sliderTexSize, Global.circleSector, 0.5f, Fade(Color{(unsigned char)((float)data.colour[0]*0.3f),(unsigned char)((float)data.colour[1]*0.3f),(unsigned char)((float)data.colour[2]*0.3f)}, 1.0f));//{2, 0, 4, 128});
+                                    amogusLast = std::max(i, 0);
+                                    if(amogusLast == renderPoints.size() - 1){
+                                        amogusLast = renderPoints.size();
+                                    }
+                                    if(i + gm->skip >= renderPoints.size()){
+                                        Vector2 centerCoord = {(renderPoints[renderPoints.size()-1].x+4 * Global.sliderTexSize-minX + gm->circlesize/2.0f) * Global.sliderTexSize, (((renderPoints[renderPoints.size()-1].y+4 * Global.sliderTexSize-minY + gm->circlesize/2.0f) * Global.sliderTexSize))};
+                                        DrawCircleWithDepth(centerCoord, ((gm->circlesize/2.0f) * 0.85)  * Global.sliderTexSize, Global.circleSector, 0.5f, Fade(Color{(unsigned char)((float)data.colour[0]*0.3f),(unsigned char)((float)data.colour[1]*0.3f),(unsigned char)((float)data.colour[2]*0.3f)}, 1.0f));//{2, 0, 4, 128});
+                                    }
                                 }
                             }
                         }
+                        EndBlendMode();
+                        
                     }
-                    EndBlendMode();
+                    rlDisableDepthTest();
+                    EndTextureMode();
                     
                 }
-                rlDisableDepthTest();
-                EndTextureMode();
-                
+                //rlDisableDepthTest();
+                EndBlendMode();
+                //EndShaderMode();
+                float outlineSize = ((17.5f * Global.sliderTexSize) * gm->circlesize/gm->sliderin.width);
+                float outlineColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };     // Normalized RED color 
+                float textureSize[2] = { (float)sliderTexture.texture.width, (float)sliderTexture.texture.height};
+                //int transparency = GetShaderLocation(Global.shdrTest, "transparency");
+                //SetShaderValue(Global.shdrTest, transparency, &clampedFade, SHADER_UNIFORM_FLOAT);
+
+
+                //BeginShaderMode(Global.shdrTest);
+
+                float amog = easeInOutCubic(clampedFade) * 0.7;
+                //std::cout << "drawslider\n";
+                DrawTextureSlider(&sliderTexture.texture, minX, minY, Fade(WHITE,amog), gm->circlesize);
+                //EndShaderMode();
+                //Vector2 tempPos2 = renderPoints[(int)std::min(((float)renderPoints.size() * (clampedFade * 2.0f)), (float)(renderPoints.size()))];
+                //DrawTextureCenter(gm->sliderin, tempPos.x, tempPos.y, gm->circlesize/gm->sliderin.width, RED);
             }
-            //rlDisableDepthTest();
-            EndBlendMode();
-            //EndShaderMode();
-            float outlineSize = ((17.5f * Global.sliderTexSize) * gm->circlesize/gm->sliderin.width);
-            float outlineColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };     // Normalized RED color 
-            float textureSize[2] = { (float)sliderTexture.texture.width, (float)sliderTexture.texture.height};
-            //int transparency = GetShaderLocation(Global.shdrTest, "transparency");
-            //SetShaderValue(Global.shdrTest, transparency, &clampedFade, SHADER_UNIFORM_FLOAT);
+            else{
+                if(true && (last < renderPoints.size() and renderPoints.size() > 0 and last != renderPoints.size() - 1)){
+                    BeginTextureMode(&sliderTexture);
+                    rlEnableDepthTest(); 
+                    rlSetBlendFactorsSeparate(RL_ONE, RL_ONE_MINUS_SRC_ALPHA, RL_ONE, RL_ONE_MINUS_SRC_ALPHA, RL_BLEND_ADD_COLORS, RL_BLEND_ADD_COLORS);
+                    //BeginBlendMode(BLEND_ALPHA_PREMUL);
+                    bool draw = true;
+                    
+                    if(renderPoints.size() > 0){
+                        int amogusLast = last;
+                        drawn = 0;
+                        for(int i = last; i < std::min(((float)renderPoints.size() * (clampedFade * 2.0f)), (float)(renderPoints.size())); i+=gm->skip){
+                            draw = false;
+                            drawn++;
+                            if(drawn > maxDrawAtTime){
+                                drawn = 0;
+                                break;
+                            }
+                            if(i < renderPoints.size() and renderPoints[i].x > -150 and renderPoints[i].x < 790 and renderPoints[i].y > -150 and renderPoints[i].y < 630){
+                                if(true){
+                                    Vector2 centerCoord = {(renderPoints[i].x+4 * Global.sliderTexSize-minX + gm->circlesize/2.0f) * Global.sliderTexSize, (((renderPoints[i].y+4 * Global.sliderTexSize-minY + gm->circlesize/2.0f) * Global.sliderTexSize))};
+                                    //DrawCircleWithDepth(centerCoord, ((gm->circlesize/2.0f) * 0.98)  * Global.sliderTexSize, Global.circleSector, 0.2f, {255, 255, 255, 255});
+                                    DrawTextureExDepth(&gm->sliderOuterBall.texture, Vector2{centerCoord.x - gm->circlesize / 2.0f * Global.sliderTexSize, centerCoord.y - gm->circlesize / 2.0f * Global.sliderTexSize}, 0.2f, gm->circlesize / 64.0f * Global.sliderTexSize, WHITE);
+                                    last = std::max(i, 0);
+                                    if(last == renderPoints.size() - 1){
+                                        last = renderPoints.size();
+                                    }
+                                    if(i + gm->skip >= renderPoints.size()){
+                                        Vector2 centerCoord = {(renderPoints[renderPoints.size()-1].x+4 * Global.sliderTexSize-minX + gm->circlesize/2.0f) * Global.sliderTexSize, (((renderPoints[renderPoints.size()-1].y+4 * Global.sliderTexSize-minY + gm->circlesize/2.0f) * Global.sliderTexSize))};
+                                        //DrawCircleWithDepth(centerCoord, ((gm->circlesize/2.0f) * 0.98)  * Global.sliderTexSize, Global.circleSector, 0.2f, {255, 255, 255, 255});
+                                        DrawTextureExDepth(&gm->sliderOuterBall.texture, Vector2{centerCoord.x - gm->circlesize / 2.0f * Global.sliderTexSize, centerCoord.y - gm->circlesize / 2.0f * Global.sliderTexSize}, 0.2f, gm->circlesize / 64.0f * Global.sliderTexSize, WHITE);
+                                    }
+                                }
+                            }
+                        }
+                        rlSetBlendFactorsSeparate(RL_ONE, RL_ONE_MINUS_SRC_ALPHA, RL_ONE, RL_ONE_MINUS_SRC_ALPHA, RL_MIN, RL_MIN);
+                        //rlSetBlendMode(RL_BLEND_CUSTOM_SEPARATE);
+                        drawn = 0;
+                        for(int i = amogusLast; i < std::min(((float)renderPoints.size() * (clampedFade * 2.0f)), (float)(renderPoints.size())); i+=gm->skip){
+                            draw = false;
+                            drawn++;
+                            if(drawn > maxDrawAtTime){
+                                drawn = 0;
+                                break;
+                            }
+                            if(i < renderPoints.size() and renderPoints[i].x > -150 and renderPoints[i].x < 790 and renderPoints[i].y > -150 and renderPoints[i].y < 630){
+                                if(true){
+                                    Vector2 centerCoord = {(renderPoints[i].x+4 * Global.sliderTexSize-minX + gm->circlesize/2.0f) * Global.sliderTexSize, (((renderPoints[i].y+4 * Global.sliderTexSize-minY + gm->circlesize/2.0f) * Global.sliderTexSize))};
+                                    Color color = Color{(unsigned char)((float)data.colour[0]*0.5f),(unsigned char)((float)data.colour[1]*0.5f),(unsigned char)((float)data.colour[2]*0.5f)};
+                                    DrawCircleWithDepth(centerCoord, ((gm->circlesize/2.0f) * 0.82)  * Global.sliderTexSize, Global.circleSector*2, 0.35f, Fade(color, 0.4f));
+                                    //DrawTextureExDepth(&gm->sliderInnerBall.texture, Vector2{centerCoord.x - gm->circlesize / 2.0f * Global.sliderTexSize * 0.85f, centerCoord.y - gm->circlesize / 2.0f * Global.sliderTexSize * 0.85f}, 0.1f, gm->circlesize / 64.0f * Global.sliderTexSize * 0.85f, Fade(WHITE, 1.0f));
+                                    //DrawCircleWithDepthGrad(centerCoord, ((gm->circlesize/2.0f) * 0.9)  * Global.sliderTexSize, Global.circleSector, 0.5f, Fade(Color{255,255,255}, 0.2f), Fade(Color{255,255,255}, 0.0f));//{2, 0, 4, 128});
+                                    //amogusLast = std::max(i, 0);
+                                    //if(amogusLast == renderPoints.size() - 1){
+                                    //    amogusLast = renderPoints.size();
+                                    //}
+                                    if(i + gm->skip >= renderPoints.size()){
+                                        Vector2 centerCoord = {(renderPoints[renderPoints.size()-1].x+4 * Global.sliderTexSize-minX + gm->circlesize/2.0f) * Global.sliderTexSize, (((renderPoints[renderPoints.size()-1].y+4 * Global.sliderTexSize-minY + gm->circlesize/2.0f) * Global.sliderTexSize))};
+                                        DrawCircleWithDepth(centerCoord, ((gm->circlesize/2.0f) * 0.82)  * Global.sliderTexSize, Global.circleSector*2, 0.35f, Fade(color, 0.4f));
+                                        //DrawTextureExDepth(&gm->sliderInnerBall.texture, Vector2{centerCoord.x - gm->circlesize / 2.0f * Global.sliderTexSize * 0.85f, centerCoord.y - gm->circlesize / 2.0f * Global.sliderTexSize * 0.85f}, 0.1f, gm->circlesize / 64.0f * Global.sliderTexSize * 0.85f, Fade(WHITE, 1.0f));
+                                        //DrawCircleWithDepthGrad(centerCoord, ((gm->circlesize/2.0f) * 0.9)  * Global.sliderTexSize, Global.circleSector, 0.5f, Fade(Color{255,255,255}, 0.2f), Fade(Color{255,255,255}, 0.0f));//{2, 0, 4, 128});
+                                    }
+                                }
+                            }
+                        }
+                        //rlEnableDepthTest();
+                        rlDisableDepthTest();
+                        rlSetBlendFactorsSeparate(RL_ONE, RL_ONE_MINUS_SRC_ALPHA, RL_ONE, RL_ONE_MINUS_SRC_ALPHA, RL_MAX, RL_MAX);
+                        drawn = 0;
+                        for(int i = amogusLast; i < std::min(((float)renderPoints.size() * (clampedFade * 2.0f)), (float)(renderPoints.size())); i+=gm->skip){
+                            draw = false;
+                            if(amogusLast == renderPoints.size() - 1){
+                                amogusLast = renderPoints.size();
+                            }
+                            drawn++;
+                            if(drawn > maxDrawAtTime){
+                                drawn = 0;
+                                break;
+                            }
+                            amogusLast = std::max(i, 0);
+                            if(i < renderPoints.size() and renderPoints[i].x > -150 and renderPoints[i].x < 790 and renderPoints[i].y > -150 and renderPoints[i].y < 630){
+                                if(true){
+                                    Vector2 centerCoord = {(renderPoints[i].x+4 * Global.sliderTexSize-minX + gm->circlesize/2.0f) * Global.sliderTexSize, (((renderPoints[i].y+4 * Global.sliderTexSize-minY + gm->circlesize/2.0f) * Global.sliderTexSize))};
+                                    Color color = Color{(unsigned char)((float)data.colour[0]*0.5f),(unsigned char)((float)data.colour[1]*0.5f),(unsigned char)((float)data.colour[2]*0.5f)};
+                                    //DrawTextureExDepth(&gm->sliderInnerBall.texture, Vector2{centerCoord.x - gm->circlesize / 2.0f * Global.sliderTexSize * 0.85f, centerCoord.y - gm->circlesize / 2.0f * Global.sliderTexSize * 0.85f}, 0.1f, gm->circlesize / 64.0f * Global.sliderTexSize * 0.85f, WHITE);
+                                    DrawCircleWithDepthGrad(centerCoord, ((gm->circlesize/2.0f) * 0.78)  * Global.sliderTexSize, Global.circleSector, 0.5f, Fade(color, 0.7f), Fade(color, 0.3f));//{2, 0, 4, 128});
+                                    if(i + gm->skip >= renderPoints.size()){
+                                        Vector2 centerCoord = {(renderPoints[renderPoints.size()-1].x+4 * Global.sliderTexSize-minX + gm->circlesize/2.0f) * Global.sliderTexSize, (((renderPoints[renderPoints.size()-1].y+4 * Global.sliderTexSize-minY + gm->circlesize/2.0f) * Global.sliderTexSize))};
+                                        
+                                        //DrawTextureExDepth(&gm->sliderInnerBall.texture, Vector2{centerCoord.x - gm->circlesize / 2.0f * Global.sliderTexSize * 0.85f, centerCoord.y - gm->circlesize / 2.0f * Global.sliderTexSize * 0.85f}, 0.1f, gm->circlesize / 64.0f * Global.sliderTexSize * 0.85f, WHITE);
+                                        DrawCircleWithDepthGrad(centerCoord, ((gm->circlesize/2.0f) * 0.78)  * Global.sliderTexSize, Global.circleSector, 0.5f, Fade(color, 0.7f), Fade(color, 0.3f));//{2, 0, 4, 128});
+                                    }
+                                }
+                            }
+                        }
+                        rlDisableDepthTest();
+                        EndBlendMode();
+                        
+                    }
+                    rlDisableDepthTest();
+                    EndTextureMode();
+                    
+                }
+                
 
 
-            //BeginShaderMode(Global.shdrTest);
+                EndBlendMode();
+                //EndShaderMode();
+                float outlineSize = ((17.5f * Global.sliderTexSize) * gm->circlesize/gm->sliderin.width);
+                float outlineColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };     // Normalized RED color 
+                float textureSize[2] = { (float)sliderTexture.texture.width, (float)sliderTexture.texture.height};
+                //int transparency = GetShaderLocation(Global.shdrTest, "transparency");
+                //SetShaderValue(Global.shdrTest, transparency, &clampedFade, SHADER_UNIFORM_FLOAT);
 
-            float amog = easeInOutCubic(clampedFade) * 0.7;
-            //std::cout << "drawslider\n";
-            DrawTextureSlider(&sliderTexture.texture, minX, minY, Fade(WHITE,amog), gm->circlesize);
-            //EndShaderMode();
-            //Vector2 tempPos2 = renderPoints[(int)std::min(((float)renderPoints.size() * (clampedFade * 2.0f)), (float)(renderPoints.size()))];
-            //DrawTextureCenter(gm->sliderin, tempPos.x, tempPos.y, gm->circlesize/gm->sliderin.width, RED);
+
+                //BeginShaderMode(Global.shdrTest);
+
+                float amog = easeInOutCubic(clampedFade) * 0.7;
+                //std::cout << "drawslider\n";
+                DrawTextureSlider(&sliderTexture.texture, minX, minY, Fade(WHITE,amog), gm->circlesize);
+                //EndShaderMode();
+                //Vector2 tempPos2 = renderPoints[(int)std::min(((float)renderPoints.size() * (clampedFade * 2.0f)), (float)(renderPoints.size()))];
+                //DrawTextureCenter(gm->sliderin, tempPos.x, tempPos.y, gm->circlesize/gm->sliderin.width, RED);
+            }
         }
         else{
             if(clampedBigFade <= 0.7f and renderPoints.size() > 0 and last != renderPoints.size() - 1){
@@ -1261,7 +1390,7 @@ void Slider::unloadTextures(){
     if(readyToDelete){
         if(IsRenderTextureReady(&sliderTexture)){
             UnloadRenderTexture(&sliderTexture);
-            std::cout << "UnloadingSliderTex\n";
+            std::cout << "UnloadingSliderTexture\n";
             readyToDelete = false;
         }
         data.textureReady = false;

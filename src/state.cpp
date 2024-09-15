@@ -29,7 +29,7 @@ PlayMenu::PlayMenu() {
 }
 
 void PlayMenu::init() {
-    std::cout << "loading the playmenu/n";
+    //std::cout << "loading the playmenu/n";
     Global.NeedForBackgroundClear = true;
     Global.useAuto = false;
     Global.LastFrameTime = getTimer();
@@ -169,7 +169,7 @@ void LoadMenu::update() {
                 std::string final_path = Global.GamePath + "/beatmaps/" + base_file;
                 create_dir(final_path);
                 int arg = 2;
-                std::cout << Global.selectedPath.c_str() << std::endl;
+                //std::cout << Global.selectedPath.c_str() << std::endl;
                 zip_extract(Global.selectedPath.c_str(), final_path.c_str(), on_extract_entry, &arg);
             }
         }
@@ -347,13 +347,13 @@ void MainMenu::update() {
         return;
     }
     else if(play.action){
-        std::cout << "play.action unload" << std::endl;
+        //std::cout << "play.action unload" << std::endl;
         Global.CurrentState->unload();
-        std::cout << "play.action reset" << std::endl;
+        //std::cout << "play.action reset" << std::endl;
         Global.CurrentState.reset(new PlayMenu());
-        std::cout << "play.action init" << std::endl;
+        //std::cout << "play.action init" << std::endl;
         Global.CurrentState->init();
-        std::cout << "play.action done" << std::endl;
+        //std::cout << "play.action done" << std::endl;
         return;
     }
     else if(load.action){
@@ -373,7 +373,7 @@ void MainMenu::update() {
     float lastVolume = Global.volume;
     Global.volume = volume.location / 100.0f;
     if(!AreSame(lastVolume, Global.volume)){
-        std::cout << "Volume: " << Global.volume << std::endl;
+        //std::cout << "Volume: " << Global.volume << std::endl;
         Global.volumeChanged = true;
     }
 }
@@ -404,21 +404,7 @@ void Game::init() {
     initDone = 0;
     Global.LastFrameTime = getTimer();
     std::cout << Global.selectedPath << std::endl;
-    std::cout << "Press select to load game" << std::endl;
-    while(false){
-        PollInputEvents();
-        if(IsKeyDown(KEY_SELECT)){
-            while(true){
-                PollInputEvents();
-                if(!IsKeyDown(KEY_SELECT)){
-                    break;
-                }
-                svcSleepThread(10000);
-            }
-            break;
-        }
-        svcSleepThread(10000);
-    }
+    
     Global.numberLines = 0;
     Global.parsedLines = 0;
     Global.loadingState = 0;
@@ -437,9 +423,7 @@ void Game::init() {
     Global.errorDiv = 0;
 
     volume.location = Global.volume * 100.0f;
-    std::cout << volume.location << std::endl;
-    std::cout << "done init, press select to continue" << std::endl;
-
+    
 }
 void Game::update() {
     if(initDone == 1){
@@ -466,7 +450,7 @@ void Game::update() {
     float lastVolume = Global.volume;
     Global.volume = volume.location / 100.0f;
     if(!AreSame(lastVolume, Global.volume)){
-        std::cout << "Volume: " << Global.volume << std::endl;
+        //std::cout << "Volume: " << Global.volume << std::endl;
         Global.volumeChanged = true;
     }
 }
@@ -833,7 +817,7 @@ void WIPMenu::update(){
                     Path = Global.BeatmapLocation + "/";
                 }
                 selectedIndex = -1;
-                std::cout << Path << std::endl;
+                //std::cout << Path << std::endl;
                 applyMouse = false;
                 float time = 0.2f;
                 while(time <= 1.0f){
@@ -964,7 +948,7 @@ void WIPMenu::update(){
             Path = Global.BeatmapLocation + "/";
         }
         selectedIndex = -1;
-        std::cout << Path << std::endl;
+        //std::cout << Path << std::endl;
         applyMouse = false;
         float time = 0.2f;
         while(time <= 1.0f){
@@ -1056,8 +1040,8 @@ ResultsMenu::ResultsMenu() {
 }
 
 void ResultsMenu::init() {
-    std::cout << "loading the scores" << std::endl;;
-    std::cout << "Maximum Combo: " + std::to_string(Global.gameManager->maxCombo) << std::endl;
+    //std::cout << "loading the scores" << std::endl;;
+    //std::cout << "Maximum Combo: " + std::to_string(Global.gameManager->maxCombo) << std::endl;
     maxCombo.text = "Maximum Combo: " + std::to_string(Global.gameManager->maxCombo);
     maxCombo.init();
     hit300.text = "300s hit: " + std::to_string(Global.gameManager->hit300s);
@@ -1120,7 +1104,7 @@ void WipMenu2::init() {
         itemNames.push_back("Item: " + std::to_string(i));
     }
     maximumPosition = minimumPosition + locations.back().location;
-    std::cout << "initilized the wip2 menu" << std::endl;
+    //std::cout << "initilized the wip2 menu" << std::endl;
     removeStuffAt = -1;
     addStuffAt = -1;
     lastStuffAt = -1;
@@ -1222,7 +1206,7 @@ void WipMenu2::render(){
             beginIt++;
             i++;
         }
-        std::cout << "among us: " << i << std::endl;
+        //std::cout << "among us: " << i << std::endl;
         int removedItems = 0;
         while(true){
             auto locationIt = beginIt;
@@ -1276,10 +1260,10 @@ void WipMenu2::render(){
             beginIt++;
             i++;
         }
-        std::cout << "among us: " << i << std::endl;
+        //std::cout << "among us: " << i << std::endl;
         int locationToAdd = (*beginIt).location;
 
-        std::cout << "locationToAdd: " << locationToAdd << std::endl;
+        //std::cout << "locationToAdd: " << locationToAdd << std::endl;
         int addedItems = 0;
         
         int addNumber = (rand() % 6) + 1;

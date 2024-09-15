@@ -86,14 +86,7 @@ void RenderLoop(void *){
     ClearBackground(Global.Background);
     C2D_Flush();  //test
     C3D_FrameEnd(0);
-    std::cout << "Clear first bg\n";
 
-    //RenderTexture2D frameGraph = LoadRenderTexture(512, 512);
-
-    std::cout << "loadframegraph\n";
-
-    //C2D_Prepare();
-    //C2D_Flush(); 
     int loc = 0;
     int lastFPS = 0;
     while(!WindowShouldClose() and !Global.stop){
@@ -131,7 +124,7 @@ void RenderLoop(void *){
 
         DrawTextEx(&Global.DefaultFont, TextFormat("FPS: %.3f TPS: %.3f",  avgFPS, avgHZ), {(int)ScaleCordX(5), (int)ScaleCordY(5)}, Scale(20.05), Scale(2), GREEN);
         if(C3D_GetCmdBufUsage() > 0.8f){
-            std::cout << "NEARLY OVERFLOWING THE COMMAND BUFFER, BEWARE: " << C3D_GetCmdBufUsage() * 100 << "%\n";
+            std::cout << "NEARLY OVERFLOWING THE COMMAND BUFFER, BEWARE: " << C3D_GetCmdBufUsage() * 100.0f << "%\n";
         }
         C2D_Flush();  //test
         Global.mutex.unlock();
@@ -264,17 +257,17 @@ int main(){
     SetTextureFilter(&Global.OsusLogo, TEXTURE_FILTER_BILINEAR);
 
     std::cout << "Loaded all files and filters\n";
-    std::cout << "Global.cursor size: " << Global.cursor.width << " x " << Global.cursor.height << " y \n";
+    //std::cout << "Global.cursor size: " << Global.cursor.width << " x " << Global.cursor.height << " y \n";
     double avgFrameTime;
     HideCursor();
     initMouseTrail();
 
-    std::cout << "Cursor init done\n";
+    //std::cout << "Cursor init done\n";
 
     Global.LastFrameTime = getTimer();
     double lastFrame = getTimer();
     Global.GameTextures = 0;
-    std::cout << "Start render loop\n";
+    std::cout << "Starting render loop\n";
     /*while(true){
         PollInputEvents();
         if(IsKeyDown(KEY_SELECT)){
@@ -341,10 +334,14 @@ int main(){
         avgHZ = avgHZqueueSUM / (double)(avgHZq.size());
     }
     Global.stop = true;
+
+    Global.CurrentState->unload();
+
     threadJoin(renderThread, U64_MAX);
     threadFree(renderThread);
 
     Global.CurrentState->unload();
+
     UnloadTexture(&Global.OsusLogo);
     UnloadTexture(&Global.cursor);
     //UnloadFont(&Global.DefaultFont);

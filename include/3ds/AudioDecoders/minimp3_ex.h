@@ -677,17 +677,17 @@ int mp3dec_ex_open_buf(mp3dec_ex_t *dec, const uint8_t *buf, size_t buf_size, in
 {
     if (!dec || !buf || (size_t)-1 == buf_size || (flags & (~MP3D_FLAGS_MASK)))
         return MP3D_E_PARAM;
-    std::cout << "mp3dec_open_buf: " << buf_size << std::endl;
+    //std::cout << "mp3dec_open_buf: " << buf_size << std::endl;
     memset(dec, 0, sizeof(*dec));
-    std::cout << "mp3dec_open_buf:memset" << std::endl;
+    //std::cout << "mp3dec_open_buf:memset" << std::endl;
     dec->file.buffer = buf;
     dec->file.size   = buf_size;
     dec->flags       = flags;
-    std::cout << "mp3dec_open_buf:dec->" << std::endl;
+    //std::cout << "mp3dec_open_buf:dec->" << std::endl;
     mp3dec_init(&dec->mp3d);
-    std::cout << "mp3dec_open_buf:mp3dec_init" << std::endl;
+    //std::cout << "mp3dec_open_buf:mp3dec_init" << std::endl;
     int ret = mp3dec_iterate_buf(dec->file.buffer, dec->file.size, mp3dec_load_index, dec);
-    std::cout << "mp3dec_open_buf:mp3dec_iterate_buf" << std::endl;
+    //std::cout << "mp3dec_open_buf:mp3dec_iterate_buf" << std::endl;
     if (ret && MP3D_E_USER != ret)
         return ret;
     mp3dec_init(&dec->mp3d);

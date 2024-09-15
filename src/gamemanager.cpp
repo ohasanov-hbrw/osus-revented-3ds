@@ -132,7 +132,7 @@ void GameManager::update(){
 	if(timingSettingsForHitObject.size() == 0){
 		int i = lastTimingLoc;
 		if(gameFile.timingPoints.size() == 0){
-			std::cout << "what the fuck" << std::endl;
+			std::cout << "missing timingpoints? cant do much. crash imminent." << std::endl;
 		}
 		else{
 			tempTiming.renderTicks = gameFile.timingPoints[i].renderTicks;
@@ -728,19 +728,19 @@ void GameManager::run(){
 		//std::cout << Time << std::endl;
 	}
 	if(Global.startTime >= 0 and startMusic){
-		std::cout << "trying to start music" << std::endl;
+		std::cout << "Starting Music Playback (only mp3 supported)" << std::endl;
 		PlayMusicStream(&backgroundMusic);
 		//Global.volume = 1.0f;
-		std::cout << Global.volume << std::endl;
+		//std::cout << Global.volume << std::endl;
     	SetMusicVolume(&backgroundMusic, Global.volume); //Global.volume
 		//SeekMusicStream(&backgroundMusic, 0.0f);
 		UpdateMusicStream(&backgroundMusic);
 		initTimer();
-		std::cout << "started music" << std::endl;
-		std::cout << "first update" << std::endl;
-		std::cout << sizeof(HitObjectData) << std::endl;
-		std::cout << sizeof(HitObjectData) * gameFile.hitObjects.size() << std::endl;
-		std::cout << "sizes given in bytes\n";
+		//std::cout << "started music" << std::endl;
+		//std::cout << "first update" << std::endl;
+		//std::cout << sizeof(HitObjectData) << std::endl;
+		//std::cout << sizeof(HitObjectData) * gameFile.hitObjects.size() << std::endl;
+		//std::cout << "sizes given in bytes\n";
 		Global.CurrentInterpolatedTime = 0;
 		Global.LastOsuTime = 0;
 		TimeLast = ms;
@@ -748,8 +748,8 @@ void GameManager::run(){
 		Global.startTime2 = ms;
 		double Time = (double)GetMusicTimePlayed(&backgroundMusic) * 1000.0;
 		double amog = getTimer();
-		std::cout << "Extra Time in ms " << Global.extraJudgementTime << std::endl;
-		std::cout << "Time:" << Time << std::endl;
+		std::cout << "Extra Judgement Time in ms " << Global.extraJudgementTime << std::endl;
+		//std::cout << "Time:" << Time << std::endl;
 		Global.avgSum = 0;
     	Global.avgNum = 0;
     	Global.avgTime = 0;
@@ -775,7 +775,7 @@ void GameManager::run(){
 			StopMusicStream(&backgroundMusic);
 			TimerLast = (double)GetMusicTimeLength(&backgroundMusic) * 1000.0;
 			TimeLast = getTimer();
-			std::cout << "waitingStart\n";
+			std::cout << "waiting for 1.5 secs for the song to end\n";
 			while(true){
 				currentTime = (double)(TimerLast + (getTimer() - TimeLast)) / 1000.0;
 				GameManager::update();
@@ -783,7 +783,7 @@ void GameManager::run(){
 				if((getTimer() - TimeLast) > 1500.0)
 					break;
 			}
-			std::cout << "waitingDone\n";
+			//std::cout << "waiting done\n";
 			Global.CurrentState->unload();
             Global.CurrentState.reset(new ResultsMenu());
             Global.CurrentState->init();
@@ -1279,6 +1279,7 @@ void GameManager::loadGame(std::string filename){
 	//precalculate all the sliders and check how long we need to wait for it
 	std::cout << "Loading sliders..." << std::endl;
 	double start = getTimer();
+	int amountOfSliders = 0;
 	for(int i = 0; i < gameFile.hitObjects.size(); i++){
 		if(gameFile.hitObjects[i].type == 2){
 			std::vector<Vector2> edgePoints; 
@@ -1476,24 +1477,10 @@ void GameManager::loadGame(std::string filename){
 		}
 		//THIS IS A REALLY BAD WAY OF DOING THIS, NEEDS REWRITING
 		*/
-		std::cout << "Calculated object at time: " << gameFile.hitObjects[i].time << std::endl;
+		//std::cout << "Calculated object at time: " << gameFile.hitObjects[i].time << std::endl;
+		amountOfSliders++;
 	}
-	std::cout << "Sliders precalculated in " << getTimer() - start << "ms" << std::endl;
-	std::cout << "done, press select to continue" << std::endl;
-	while(false){
-        PollInputEvents();
-        if(IsKeyDown(KEY_SELECT)){
-            while(true){
-                PollInputEvents();
-                if(!IsKeyDown(KEY_SELECT)){
-                    break;
-                }
-                svcSleepThread(10000);
-            }
-            break;
-        }
-        svcSleepThread(10000);
-    }
+	std::cout << amountOfSliders << " Sliders precalculated in " << getTimer() - start << "ms" << std::endl;
 	Global.loadingState = 2;
 	
 	
@@ -1519,9 +1506,9 @@ void GameManager::loadGame(std::string filename){
 	gameFile.p50Final = gameFile.p50 - std::stof(gameFile.configDifficulty["OverallDifficulty"]) * gameFile.p50Change;
 
 	//debug lines
-	std::cout << gameFile.p300Final << " " << gameFile.p100Final << " " << gameFile.p50Final << " " << gameFile.preempt << std::endl;
-	std::cout << std::stof(gameFile.configDifficulty["OverallDifficulty"]) << " " << gameFile.configDifficulty["OverallDifficulty"] << std::endl;
-	std::cout << std::stof(gameFile.configDifficulty["ApproachRate"]) << " " << gameFile.configDifficulty["ApproachRate"] << std::endl;
+	//std::cout << gameFile.p300Final << " " << gameFile.p100Final << " " << gameFile.p50Final << " " << gameFile.preempt << std::endl;
+	//std::cout << std::stof(gameFile.configDifficulty["OverallDifficulty"]) << " " << gameFile.configDifficulty["OverallDifficulty"] << std::endl;
+	//std::cout << std::stof(gameFile.configDifficulty["ApproachRate"]) << " " << gameFile.configDifficulty["ApproachRate"] << std::endl;
 	
 	//debug, just say what the name of the music file is and load it
 	
@@ -1587,21 +1574,21 @@ void GameManager::loadGame(std::string filename){
 	//spinner debug lines
 	if(temprenderSpinnerCircle == true){
 		renderSpinnerCircle = true;
-		std::cout << "================================== RENDERING THE SPINNER CIRCLE ==================================\n";
+		//std::cout << "================================== RENDERING THE SPINNER CIRCLE ==================================\n";
 	}
 	else{
 		renderSpinnerCircle = false;
 	}
 	if(temprenderSpinnerMetre == true){
 		renderSpinnerMetre = true;
-		std::cout << "=================================== RENDERING THE SPINNER METRE ==================================\n";
+		//std::cout << "=================================== RENDERING THE SPINNER METRE ==================================\n";
 	}
 	else{
 		renderSpinnerMetre = false;
 	}
 	if(temprenderSpinnerBack == true){
 		renderSpinnerBack = true;
-		std::cout << "================================ RENDERING THE SPINNER BACKGROUND ================================\n";
+		//std::cout << "================================ RENDERING THE SPINNER BACKGROUND ================================\n";
 	}
 	else{
 		renderSpinnerBack = false;
@@ -1612,21 +1599,6 @@ void GameManager::loadGame(std::string filename){
 
 	//followpoint precalculations/creation. These values are wrong.
 	//TODO: fix this bs
-	std::cout << "press select to load timing points" << std::endl;
-	while(false){
-        PollInputEvents();
-        if(IsKeyDown(KEY_SELECT)){
-            while(true){
-                PollInputEvents();
-                if(!IsKeyDown(KEY_SELECT)){
-                    break;
-                }
-                svcSleepThread(10000);
-            }
-            break;
-        }
-        svcSleepThread(10000);
-    }
 	std::reverse(gameFile.timingPoints.begin(),gameFile.timingPoints.end());
 	std::reverse(gameFile.events.begin(),gameFile.events.end());
 
@@ -1744,42 +1716,11 @@ void GameManager::loadGame(std::string filename){
 		defaultSampleSet = 2;
 	}
 
-	std::cout << "press select to load sounds" << std::endl;
-	while(false){
-        PollInputEvents();
-        if(IsKeyDown(KEY_SELECT)){
-            while(true){
-                PollInputEvents();
-                if(!IsKeyDown(KEY_SELECT)){
-                    break;
-                }
-                svcSleepThread(10000);
-            }
-            break;
-        }
-        svcSleepThread(10000);
-    }
-
 	SoundFiles.data.clear();
 	SoundFiles.loaded.clear();
 	loadGameSounds();
 
 	Global.Path.pop_back();
-	std::cout << (Global.Path + '/' + gameFile.configGeneral["AudioFilename"]) << " press select to load" << std::endl;
-	while(false){
-        PollInputEvents();
-        if(IsKeyDown(KEY_SELECT)){
-            while(true){
-                PollInputEvents();
-                if(!IsKeyDown(KEY_SELECT)){
-                    break;
-                }
-                svcSleepThread(10000);
-            }
-            break;
-        }
-        svcSleepThread(10000);
-    }
 	backgroundMusic = LoadMusicStream((Global.Path + '/' + gameFile.configGeneral["AudioFilename"]).c_str());
 
 	std::cout << "Free Vram: " << vramSpaceFree() << std::endl;
@@ -1803,10 +1744,10 @@ void GameManager::loadGame(std::string filename){
 }
 
 void GameManager::unloadGame(){
-	std::cout << "GameManager::unloadGame()" << std::endl;
+	//std::cout << "UnloadingGame" << std::endl;
 	currentComboIndex = 0;
 	Global.GameTextures = -1;
-	
+	SleepInMs(20);
 	for(auto& pair : SoundFiles.data) {
     	UnloadSound(&pair.second);
   	}
@@ -1817,26 +1758,21 @@ void GameManager::unloadGame(){
 	/*for(int i = objects.size()-1; i >= 0; i--){
 		destroyHitObject(i);
 	}*/
-	while(true){
-		if(objectsLinkedList.getHead() == NULL)
-			break;
-		((HitObject*)objectsLinkedList.getHead()->object)->deinit();
-		delete objectsLinkedList.getHead()->object;
-		objectsLinkedList.deleteHead();
-	}
-	while(true){
-		if(deadObjectsLinkedList.getHead() == NULL)
-			break;
-		((HitObject*)deadObjectsLinkedList.getHead()->object)->deinit();
-		delete deadObjectsLinkedList.getHead()->object;
-		deadObjectsLinkedList.deleteHead();
-	}
+	
 	UnloadMusicStream(&backgroundMusic);
 	Global.numberLines = -1;
     Global.parsedLines = -1;
 
 	SoundFiles.data.clear();
 	SoundFiles.loaded.clear();
+
+	while(true){
+		SleepInMs(5);
+		if(Global.GameTextures == 15)
+			break;
+	}
+
+
 
 	gameFile.hitObjects.clear();
 	gameFile.timingPoints.clear();
@@ -1852,6 +1788,23 @@ void GameManager::unloadGame(){
 	followLines.clear();
 
 	followLines = std::vector<FollowPoint>();
+
+	
+
+	while(true){
+		if(objectsLinkedList.getHead() == NULL)
+			break;
+		((HitObject*)objectsLinkedList.getHead()->object)->deinit();
+		delete objectsLinkedList.getHead()->object;
+		objectsLinkedList.deleteHead();
+	}
+	while(true){
+		if(deadObjectsLinkedList.getHead() == NULL)
+			break;
+		((HitObject*)deadObjectsLinkedList.getHead()->object)->deinit();
+		delete deadObjectsLinkedList.getHead()->object;
+		deadObjectsLinkedList.deleteHead();
+	}
 }
 
 void GameManager::spawnHitObject(HitObjectData data){
@@ -1920,12 +1873,39 @@ void GameManager::loadGameTextures(){
 	//ImageColorReplace(&tempImage, {255,255,255,159}, {255,255,255,0});
 	//sliderin = LoadTextureFromImage(tempImage);
 	//UnloadImage(tempImage);
-	std::cout << "loaded tempImage to memory done, press select to continue" << std::endl;
+	//std::cout << "loaded tempImage to memory done, press select to continue" << std::endl;
 	//Image tempImage2 = GenImageGradientRadial(sliderin.width, sliderin.height, 0.1, {255,0,0,255}, {0,0,0,0});
 	//sliderblank = LoadTexture("sdmc:/3ds/resources/SliderBlank.png");
 	//sliderout = LoadTexture("sdmc:/3ds/resources/SliderBlank.png");
 	//UnloadImage(tempImage2);
     //sliderout = LoadTexture("sdmc:/3ds/resources/sliderout.png");
+	sliderInnerBall = LoadRenderTexture(64, 64);
+	sliderOuterBall = LoadRenderTexture(64, 64);	
+	
+	BeginTextureMode(&sliderOuterBall);
+    ClearBackground({0,0,0,0});
+	EndBlendMode();
+	rlEnableDepthTest();
+	DrawCircleWithDepth((Vector2){32, 32}, 31, 60, 0.2f, {255, 255, 255, 255});
+	//rlSetBlendFactorsSeparate(RL_SRC_ALPHA, RL_ONE_MINUS_SRC_ALPHA, RL_SRC_ALPHA, RL_ONE_MINUS_SRC_ALPHA, RL_MIN, RL_MIN);
+	//DrawCircleWithDepth((Vector2){32, 32}, 30*0.85f, 60, 0.5f, {0, 0, 0, 0});
+	EndBlendMode();
+	rlDisableDepthTest();
+    EndTextureMode();
+    SetTextureFilter(&sliderOuterBall.texture, TEXTURE_FILTER_BILINEAR);
+	
+	BeginTextureMode(&sliderInnerBall);
+    ClearBackground({0,0,0,0});
+	EndBlendMode();
+	rlEnableDepthTest();
+	DrawCircleWithDepth((Vector2){32, 32}, 30, 60, 0.5f, {0, 0, 0, 255});
+	rlDisableDepthTest();
+    EndTextureMode();
+    SetTextureFilter(&sliderInnerBall.texture, TEXTURE_FILTER_BILINEAR);
+
+
+
+
 	followPoint = LoadTexture("sdmc:/3ds/resources/followpoint.png");
     loadDefaultSkin(Global.selectedPath); // LOADING THE DEFAULT SKIN USING A SEPERATE FUNCTION
     loadGameSkin(Global.selectedPath); // LOADING THE GAME SKIN USING A SEPERATE FUNCTION
@@ -2048,7 +2028,7 @@ void GameManager::loadGameTextures(){
 }
 
 void GameManager::unloadGameTextures(){
-	std::cout << "UnloadingTextures" << std::endl;
+	std::cout << "Unloading Textures" << std::endl;
     Global.GameTextures = 2;
     UnloadTexture(&hitCircleOverlay);
     UnloadTexture(&hitCircle);
@@ -2070,6 +2050,10 @@ void GameManager::unloadGameTextures(){
     UnloadTexture(&spinnerApproachCircle);
     UnloadTexture(&spinnerMetre);
 	UnloadTexture(&followPoint);
+
+	UnloadRenderTexture(&sliderInnerBall);
+	UnloadRenderTexture(&sliderOuterBall);
+
     for(int i = 0; i < 10; i++){
         UnloadTexture(&numbers[i]);
     }
@@ -2080,9 +2064,36 @@ void GameManager::unloadGameTextures(){
         UnloadTexture(&backgroundTextures.data[key]);
     }
 
-    backgroundTextures.data.clear();
+    
+
+
+	Global.GameTextures = 10;
+
+	backgroundTextures.data.clear();
     backgroundTextures.pos.clear();
     backgroundTextures.loaded.clear();
+
+	Node * deadHitObjectNode = deadObjectsLinkedList.getHead();
+	Node * deadHitObjectNodeNext;
+	HitObject* deadHitObject;
+	while(true){
+		if(deadHitObjectNode == NULL){
+			break;
+		}
+		deadHitObject = (HitObject*)deadHitObjectNode->object;
+		deadHitObjectNodeNext = deadHitObjectNode->next;
+
+		if(deadHitObject->data.type == 2){
+			if(Slider* tempslider = dynamic_cast<Slider*>(deadHitObject)){
+				tempslider->readyToDelete = true;
+			}
+		}
+		
+		deadHitObjectNode = deadHitObjectNodeNext;
+	}
+	unloadSliderTextures();
+
+	Global.GameTextures = 15;
 }
 
 int orientation2(Vector2 &p1, Vector2 &p2, Vector2 &p3){

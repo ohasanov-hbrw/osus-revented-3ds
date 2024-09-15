@@ -79,6 +79,8 @@ class GameManager{
 		Texture2D spinnerMetre;
 		Texture2D spinnerBack;
 		Texture2D followPoint;
+		RenderTexture2D sliderInnerBall;
+		RenderTexture2D sliderOuterBall;
 		Music backgroundMusic;
 		double currentTime;
 		double currentTimeTemp = -1;

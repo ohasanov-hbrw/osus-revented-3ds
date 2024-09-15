@@ -118,8 +118,10 @@ void rlEnableDepthMask();
 void EndTextureMode();
 
 void rlEnableDepthTest();
+void rlEnableDepthTest2();
 
 void DrawCircleWithDepth(Vector2 center, float radius, int segments, float depth, Color color);
+void DrawCircleWithDepthGrad(Vector2 center, float radius, int segments, float depth, Color color, Color color2);
 
 void rlSetBlendMode(int mode);
 void rlSetBlendFactorsSeparate(GPU_BLENDFACTOR glSrcRGB, GPU_BLENDFACTOR glDstRGB, GPU_BLENDFACTOR glSrcAlpha, GPU_BLENDFACTOR glDstAlpha, GPU_BLENDEQUATION glEqRGB, GPU_BLENDEQUATION glEqAlpha);
@@ -128,7 +130,7 @@ void rlDisableDepthTest();
 
 void EndBlendMode();
 void DrawTextureEx(Texture2D *texture, Vector2 position, float rotation, float scale, Color tint);
-
+void DrawTextureExDepth(Texture2D *texture, Vector2 position, float depth, float scale, Color tint);
 
 void DrawTextureRotate(Texture2D *tex, float x, float y, float s, float r, Color tint); //DEFINING HERE, UTILS.CPP :D
 

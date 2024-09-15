@@ -156,11 +156,11 @@ void StopMusicStream(Music *music){
         music->paused = true;
         u8 newCommand = 0x0000000F;
         music->command = newCommand;
-        std::cout << "kill command sent\n";
+        std::cout << "music kill command sent\n";
         if(music->playing){
             threadJoin(music->thread, U64_MAX);
             threadFree(music->thread);
-            std::cout << "thread joined\n";
+            std::cout << "music thread joined\n";
         }
         for(int i = 0; i < 24; i++){
             ndspChnReset(i);
@@ -274,7 +274,7 @@ void MusicThread(Music *music){
                 if (music->waveBuf[i].status == NDSP_WBUF_FREE) {
                     music->waveBuf[i].nsamples = mp3dec_ex_read(music->decoder, (mp3d_sample_t*)music->waveBuf[i].data_pcm16, bufferSamples * music->channels) / music->channels;
                     if(music->waveBuf[i].nsamples > 0){
-                        std::cout << "preloaded buffer: " << i << std::endl;
+                        //std::cout << "preloaded buffer: " << i << std::endl;
                         DSP_FlushDataCache(music->waveBuf[i].data_pcm16, bufferSize);
                     }
                     else{
@@ -367,7 +367,7 @@ Music LoadMusicStream(const char *filename){
     
     if(music.memory){
         if(mp3dec_ex_open_buf(music.decoder, music.fileBuffer, music.fileSize, MP3D_SEEK_TO_SAMPLE) != 0){
-            std::cout << "Failed loading music: " << filename << std::endl;
+            std::cout << "Failed decoding music: " << filename << std::endl;
             free(music.decoder);
             linearFree(music.fileBuffer);
             music.memory = false;
@@ -376,14 +376,14 @@ Music LoadMusicStream(const char *filename){
     }
     else{
         if(mp3dec_ex_open(music.decoder, filename, MP3D_SEEK_TO_SAMPLE) != 0){
-            std::cout << "Failed loading music: " << filename << std::endl;
+            std::cout << "Failed decoding music: " << filename << std::endl;
             free(music.decoder);
             return music;
         }
     }
     mp3dec_ex_seek(music.decoder, 0);
     music.length = ((music.decoder->samples * 1000) / music.decoder->info.hz) / music.decoder->info.channels;
-    std::cout << music.length << std::endl;
+    //std::cout << music.length << std::endl;
 
     std::cout << "Loaded music: " << filename << std::endl;
     music.sampleRate = music.decoder->info.hz;
@@ -399,7 +399,7 @@ Music LoadMusicStream(const char *filename){
 
     int numberOfBuffers = 2;
 
-    std::cout << bufferSize << std::endl;
+    //std::cout << bufferSize << std::endl;
     memset(music.waveBuf, 0, sizeof(music.waveBuf));
 	for (int i = 0; i < numberOfBuffers; i++) {
 		music.waveBuf[i].data_vaddr = (s16*)linearAlloc(bufferSize);
@@ -427,7 +427,7 @@ Music LoadMusicStream(const char *filename){
         if (music.waveBuf[i].status == NDSP_WBUF_FREE) {
             music.waveBuf[i].nsamples = mp3dec_ex_read(music.decoder, (mp3d_sample_t*)music.waveBuf[i].data_vaddr, bufferSamples * music.channels) / music.channels;
             if(music.waveBuf[i].nsamples > 0){
-                std::cout << "preloaded buffer: " << i << std::endl;
+                //std::cout << "preloaded buffer: " << i << std::endl;
                 DSP_FlushDataCache(music.waveBuf[i].data_vaddr, bufferSize);
             }
             else{
@@ -460,7 +460,7 @@ void UnloadSound(Sound *sound){
         sound->channels = 0;
         sound->sampleRate = 0;
         sound->sampleSize = 0;
-        std::cout << "free some sounds\n";
+        std::cout << "free sounds in dsp\n";
     }
 }
 
@@ -470,11 +470,11 @@ void UnloadMusicStream(Music *music){
         Global.MusicLoaded = false;
         u8 newCommand = 0x0000000F;
         music->command = newCommand;
-        std::cout << "kill command sent\n";
+        std::cout << "music kill command sent\n";
         if(music->playing){
             threadJoin(music->thread, U64_MAX);
             threadFree(music->thread);
-            std::cout << "thread joined\n";
+            std::cout << "music thread joined\n";
         }
         for(int i = 0; i < 24; i++){
             ndspChnReset(i);

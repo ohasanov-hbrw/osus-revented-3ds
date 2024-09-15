@@ -140,7 +140,7 @@ int loadogg(const char *fileName, Sound *sound){
     sound->sampleRate = sampleRate / sampleRateDivider;
     sound->channels = channels / channelDivider;
     sound->loaded = true;
-    std::cout << "loaded file\n";
+    //std::cout << "loaded file\n";
     Global.totalNumOfSamples += sound->sampleSize;
     free(sampleBuffer);
     //linearFree(audioBuffer);
@@ -283,7 +283,7 @@ int loadwav(const char *fileName, Sound *sound){
     sound->sampleRate = sampleRate / sampleRateDivider;
     sound->channels = wav.channels / channelDivider;
     sound->loaded = true;
-    std::cout << "loaded file\n";
+    //std::cout << "loaded file\n";
     Global.totalNumOfSamples += sound->sampleSize;
     free(pDecodedInterleavedPCMFrames);
     //linearFree(audioBuffer);
@@ -333,7 +333,7 @@ int loadmp3(const char *fileName, Sound *sound){
     int samplesReadAtOneTime = 512;
     mp3dec_ex_seek(decoder, 0);
 
-    std::cout << "seek to 0\n";
+    //std::cout << "seek to 0\n";
 
     mp3d_sample_t *sampleBuffer = (mp3d_sample_t *)malloc(sizeof(mp3d_sample_t)*samplesReadAtOneTime);
     int totalRead = 0;
@@ -469,7 +469,7 @@ int loadmp3(const char *fileName, Sound *sound){
     sound->sampleRate = decoder->info.hz / sampleRateDivider;
     sound->channels = decoder->info.channels / channelDivider;
     sound->loaded = true;
-    std::cout << "loaded file\n";
+    //std::cout << "loaded file\n";
     Global.totalNumOfSamples += sound->sampleSize;
     mp3dec_ex_close(decoder);
     free(fileBuffer);
