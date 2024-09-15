@@ -998,7 +998,8 @@ void Slider::render(){
                 //DrawTextureCenter(gm->sliderin, tempPos.x, tempPos.y, gm->circlesize/gm->sliderin.width, RED);
             }
             else{
-                if(true && (last < renderPoints.size() and renderPoints.size() > 0 and last != renderPoints.size() - 1)){
+                //if(true && (last < renderPoints.size() and renderPoints.size() > 0 and last != renderPoints.size() - 1)){
+                if(renderPoints.size() > 0 and last != renderPoints.size() - 1){
                     BeginTextureMode(&sliderTexture);
                     rlEnableDepthTest(); 
                     rlSetBlendFactorsSeparate(RL_ONE, RL_ONE_MINUS_SRC_ALPHA, RL_ONE, RL_ONE_MINUS_SRC_ALPHA, RL_BLEND_ADD_COLORS, RL_BLEND_ADD_COLORS);

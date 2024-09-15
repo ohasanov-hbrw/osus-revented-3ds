@@ -1315,7 +1315,7 @@ void DrawCircleWithDepth(Vector2 center, float radius, int segments, float depth
         //rlVertex2f(center.x + cosf(DEG2RAD*angle)*radius, center.y + sinf(DEG2RAD*angle)*radius);
         u32 c = C2D_Color32(color.r, color.g, color.b, color.a);
         C2D_DrawTriangle(center.x, center.y, c, center.x + cosf(DEG2RAD*(angle + stepLength))*radius, center.y + sinf(DEG2RAD*(angle + stepLength))*radius, c, center.x + cosf(DEG2RAD*angle)*radius, center.y + sinf(DEG2RAD*angle)*radius, c, depth);
-        //C2D_Flush(); 
+        C2D_Flush(); 
         angle += stepLength;
     }
     C2D_Flush();  //test
@@ -1361,7 +1361,7 @@ void DrawCircleWithDepthGrad(Vector2 center, float radius, int segments, float d
         u32 c = C2D_Color32(color2.r, color2.g, color2.b, color2.a);
         u32 cs = C2D_Color32(color.r, color.g, color.b, color.a);
         C2D_DrawTriangle(center.x, center.y, cs, center.x + cosf(DEG2RAD*(angle + stepLength))*radius, center.y + sinf(DEG2RAD*(angle + stepLength))*radius, c, center.x + cosf(DEG2RAD*angle)*radius, center.y + sinf(DEG2RAD*angle)*radius, c, depth);
-        //C2D_Flush(); 
+        C2D_Flush(); 
         angle += stepLength;
     }
     C2D_Flush();  //test
