@@ -167,6 +167,7 @@ struct Globals {
     InputHandler Input;
     bool renderFrame;
     std::mutex mutex;
+    std::mutex mutex2;
 
     LightLock lightlock;
 

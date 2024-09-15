@@ -229,7 +229,7 @@ void GameManager::update(){
 			break;
 	}
 	*/
-
+	Global.mutex2.lock();
 	int size = gameFile.hitObjects.size();	
 	for(int i = size-1; i >= 0; i--){
 		if(gameFile.hitObjects[i].time - gameFile.preempt <= currentTime*1000.0f){
@@ -608,7 +608,7 @@ void GameManager::update(){
 		followLines.pop_back();
 	}
 
-
+	Global.mutex2.unlock();
 }
 
 //main rendering loop
@@ -668,7 +668,7 @@ void GameManager::render(){
 	/*for(int i = objects.size() - 1; i >= 0; i--){
 		objects[i]->render();
 	}*/
-
+	Global.mutex2.lock();
 	Node * hitObjectNode = objectsLinkedList.getTail();
 	Node * hitObjectNodeNext;
 	HitObject* hitObject;
@@ -679,7 +679,9 @@ void GameManager::render(){
 		}
 		hitObject = (HitObject*)hitObjectNode->object;
 		hitObjectNodeNext = hitObjectNode->prev;
-
+		if(hitObject == NULL){
+			break;
+		}
 		hitObject->render();
 
 		hitObjectNode = hitObjectNodeNext;
@@ -694,12 +696,14 @@ void GameManager::render(){
 		}
 		deadHitObject = (HitObject*)deadHitObjectNode->object;
 		deadHitObjectNodeNext = deadHitObjectNode->prev;
-
+		if(deadHitObject == NULL){
+			break;
+		}
 		deadHitObject->dead_render();
 		
 		deadHitObjectNode = deadHitObjectNodeNext;
 	}
-
+	Global.mutex2.unlock();
 	DrawCNumbersCenter(score, 320, 10, 0.4f, WHITE);
 	DrawCNumbersLeft(clickCombo, 15, 460, 0.6f, WHITE);
 
@@ -1790,7 +1794,7 @@ void GameManager::unloadGame(){
 	followLines = std::vector<FollowPoint>();
 
 	
-
+	Global.mutex2.lock();
 	while(true){
 		if(objectsLinkedList.getHead() == NULL)
 			break;
@@ -1805,6 +1809,7 @@ void GameManager::unloadGame(){
 		delete deadObjectsLinkedList.getHead()->object;
 		deadObjectsLinkedList.deleteHead();
 	}
+	Global.mutex2.unlock();
 }
 
 void GameManager::spawnHitObject(HitObjectData data){
@@ -2072,7 +2077,7 @@ void GameManager::unloadGameTextures(){
 	backgroundTextures.data.clear();
     backgroundTextures.pos.clear();
     backgroundTextures.loaded.clear();
-
+	Global.mutex2.lock();
 	Node * deadHitObjectNode = deadObjectsLinkedList.getHead();
 	Node * deadHitObjectNodeNext;
 	HitObject* deadHitObject;
@@ -2092,7 +2097,7 @@ void GameManager::unloadGameTextures(){
 		deadHitObjectNode = deadHitObjectNodeNext;
 	}
 	unloadSliderTextures();
-
+	Global.mutex2.unlock();
 	Global.GameTextures = 15;
 }
 

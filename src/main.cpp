@@ -127,12 +127,12 @@ void RenderLoop(void *){
             std::cout << "NEARLY OVERFLOWING THE COMMAND BUFFER, BEWARE: " << C3D_GetCmdBufUsage() * 100.0f << "%\n";
         }
         C2D_Flush();  //test
-        Global.mutex.unlock();
+        
         C3D_FrameEnd(0);
 
         if(Global.sliderTexNeedDeleting)
             Global.gameManager->unloadSliderTextures();
-
+        Global.mutex.unlock();
         std::chrono::duration<double, std::milli> elapsed {std::chrono::steady_clock::now() - t1};
         double fps = (1000.0f / (elapsed.count()));
         lastFPS = fps;
@@ -312,6 +312,7 @@ int main(){
         Global.LastFrameTime = getTimer();
         updateMouseTrail();
         Global.CurrentState->update();
+        
         Global.mutex.unlock();
         //LightLock_Unlock(&Global.lightlock);
 
