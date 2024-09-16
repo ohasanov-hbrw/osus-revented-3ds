@@ -531,7 +531,7 @@ void Game::update() {
     if(initDone == 1){
         //Global.enableMouse = false;
         MutexLock(ACCESSING_OBJECTS);
-        if(IsKeyPressed(KEY_B)){
+        if(IsKeyPressed(KEY_B) || !(!WindowShouldClose() and aptMainLoop())){
             Global.CurrentState->initDone = 3;
             MutexUnlock(ACCESSING_OBJECTS);
 
@@ -630,7 +630,7 @@ void Game::render() {
             message = "Parsing line " + std::to_string(Global.parsedLines) + " of " + std::to_string(Global.numberLines);
         }
         else if(Global.loadingState == 6){
-            message = "Parsing Timing Points";
+            message = "Parsing Sounds";
         }
         else if(Global.loadingState == 7){
             message = "Loading Textures";

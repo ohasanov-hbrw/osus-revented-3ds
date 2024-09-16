@@ -332,7 +332,7 @@ int main(){
     std::cout << "unloading current situation\n";
     Global.stop = true;
     Global.CurrentState->unload();
-    SleepInMs(1000);
+    SleepInMs(5);
     std::cout << "unloaded\n";
     MutexUnlock(RENDER_BLOCK);
 
@@ -341,7 +341,8 @@ int main(){
 
     //Global.CurrentState->unload();
 
-    std::cout << "bye bye ~!\n";
+    std::cout << "bye bye :3 ~!\n";
+    SleepInMs(1000);
 
     gfxExit();
     return 0;

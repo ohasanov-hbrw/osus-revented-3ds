@@ -1377,7 +1377,7 @@ void rlSetBlendFactorsSeparate(GPU_BLENDFACTOR glSrcRGB, GPU_BLENDFACTOR glDstRG
 }
 
 void rlDisableDepthTest(){
-    C3D_DepthTest(false, GPU_GREATER, GPU_WRITE_ALL);
+    C3D_DepthTest(true, GPU_ALWAYS, GPU_WRITE_ALL);
     C2D_Flush(); 
 }
 
