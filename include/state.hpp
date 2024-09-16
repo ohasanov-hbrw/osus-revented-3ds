@@ -16,6 +16,7 @@ public:
     virtual void render() = 0;
     virtual void update() = 0;
     virtual void unload() = 0;
+    virtual void textureOps() = 0;
 };
 
 class PlayMenu : public State {
@@ -41,6 +42,7 @@ public:
     void render() override;
     void update() override;
     void unload() override;
+    void textureOps() override;
 };
 
 class ResultsMenu : public State {
@@ -59,6 +61,7 @@ public:
     void render() override;
     void update() override;
     void unload() override;
+    void textureOps() override;
 };
 
 class LoadMenu : public State {
@@ -77,6 +80,7 @@ public:
     void render() override;
     void update() override;
     void unload() override;
+    void textureOps() override;
 };
 
 class MainMenu : public State {
@@ -94,6 +98,7 @@ public:
     void render() override;
     void update() override;
     void unload() override;
+    void textureOps() override;
 };
 
 class WipMenu2 : public State {
@@ -127,6 +132,7 @@ public:
     void render() override;
     void update() override;
     void unload() override;
+    void textureOps() override;
 };
 
 class Game : public State {
@@ -139,6 +145,7 @@ public:
     void render() override;
     void update() override;
     void unload() override;
+    void textureOps() override;
 };
 
 class WIPMenu : public State {
@@ -174,5 +181,6 @@ public:
     void render() override;
     void update() override;
     void unload() override;
+    void textureOps() override;
 };
 

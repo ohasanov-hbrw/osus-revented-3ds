@@ -12,6 +12,8 @@
 #include <ctype.h>
 #include <cstring>
 #include <clocale>
+#include "utils.hpp"
+#include "time_util.hpp"
 
 PlayMenu::PlayMenu() {
     name = TextBox({320,440}, {520,40}, {0,0,0,0}, "BETA VERSION!", WHITE, 20, 50);
@@ -29,6 +31,7 @@ PlayMenu::PlayMenu() {
 }
 
 void PlayMenu::init() {
+    //MutexLock(SWITCHING_STATE);
     //std::cout << "loading the playmenu/n";
     Global.NeedForBackgroundClear = true;
     Global.useAuto = false;
@@ -38,9 +41,13 @@ void PlayMenu::init() {
 
     std::vector<std::string> dir = ls(".osu");
     dir_list = SelectableList({320, 250}, {520, 160}, {255,135,198,255}, dir, BLACK, 20, 20, 65);
+    //MutexUnlock(SWITCHING_STATE);
 }
 void PlayMenu::render() {
     //Global.mutex.lock();
+    //MutexLock(SWITCHING_STATE);
+    //MutexLock(ACCESSING_OBJECTS);
+    MutexLock(ACCESSING_OBJECTS);
     bg.render();
     description.render();
     back.render();
@@ -52,9 +59,15 @@ void PlayMenu::render() {
     usedskin.render();
     usedsound.render();
     name.render();
+    MutexUnlock(ACCESSING_OBJECTS);
+    //MutexUnlock(ACCESSING_OBJECTS);
+    //MutexUnlock(SWITCHING_STATE);
     //Global.mutex.unlock();
 }
 void PlayMenu::update() {
+    //MutexLock(SWITCHING_STATE);
+    //MutexLock(ACCESSING_OBJECTS);
+    MutexLock(ACCESSING_OBJECTS);
     Global.enableMouse = true;
     dir_list.update();
     select.update();
@@ -72,16 +85,21 @@ void PlayMenu::update() {
     
     if(sound.state != Global.settings.useDefaultSounds)
         Global.settings.useDefaultSounds = sound.state;
-    
+    MutexUnlock(ACCESSING_OBJECTS);
+
     if(close.action){
         Global.Path = temp;
+        MutexLock(SWITCHING_STATE);
         Global.CurrentState->unload();
         Global.CurrentState.reset(new MainMenu());
+        Global.CurrentState->init();
+        MutexUnlock(SWITCHING_STATE);
     }
 
     if(select.action or dir_list.action){
         if(dir_list.objects.size() > 0 and dir_list.objects[dir_list.selectedindex].text.size() > 0){
             if(dir_list.objects[dir_list.selectedindex].text[dir_list.objects[dir_list.selectedindex].text.size()-1] == '/'){
+                MutexLock(ACCESSING_OBJECTS);
                 dir_list.objects[dir_list.selectedindex].text.pop_back();
                 if(Global.Path.size() == 1) Global.Path.pop_back();
                 Global.Path += '/' + dir_list.objects[dir_list.selectedindex].text;
@@ -90,24 +108,37 @@ void PlayMenu::update() {
                 dir_list = SelectableList(dir_list.position, dir_list.size, dir_list.color, dir, dir_list.textcolor, dir_list.textsize, dir_list.objectsize, dir_list.maxlength);
                 dir_list.init();
                 lastIndex = -3;
+                MutexUnlock(ACCESSING_OBJECTS);
             }
             else{
+                MutexLock(ACCESSING_OBJECTS);
                 Global.selectedPath = Global.Path + '/' + dir_list.objects[dir_list.selectedindex].text;
                 Global.CurrentLocation = "beatmaps/" + lastPos + "/";
+                MutexUnlock(ACCESSING_OBJECTS);
+                MutexLock(SWITCHING_STATE);
                 Global.CurrentState->unload();
                 Global.CurrentState.reset(new Game());
                 Global.CurrentState->init();
+                MutexUnlock(SWITCHING_STATE);
             }
         }
     }
     else if(back.action){
+        MutexLock(ACCESSING_OBJECTS);
         Global.Path = Global.BeatmapLocation;
         auto dir = ls(".osu");
         dir_list = SelectableList(dir_list.position, dir_list.size, dir_list.color, dir, dir_list.textcolor, dir_list.textsize, dir_list.objectsize, dir_list.maxlength);
         dir_list.init();
+        MutexUnlock(ACCESSING_OBJECTS);
     }
+    //MutexUnlock(ACCESSING_OBJECTS);
+    //MutexUnlock(SWITCHING_STATE);
 }
 void PlayMenu::unload() {
+    //MutexLock(SWITCHING_STATE);
+    //MutexUnlock(SWITCHING_STATE);
+}
+void PlayMenu::textureOps() {
 
 }
 
@@ -123,14 +154,18 @@ LoadMenu::LoadMenu() {
 }
 
 void LoadMenu::init() {
+    //MutexLock(SWITCHING_STATE);
     Global.NeedForBackgroundClear = true;
     Global.useAuto = false;
     Global.LastFrameTime = getTimer();
     Global.FrameTime = 0.5;
+    //MutexUnlock(SWITCHING_STATE);
 }
-
 void LoadMenu::render() {
     //Global.mutex.lock();
+    //MutexLock(SWITCHING_STATE);
+    //MutexLock(ACCESSING_OBJECTS);
+    MutexLock(ACCESSING_OBJECTS);
     bg.render();
     description.render();
     back.render();
@@ -138,20 +173,30 @@ void LoadMenu::render() {
     select.render();
     dir_list.render();
     close.render();
+    MutexUnlock(ACCESSING_OBJECTS);
+    //MutexUnlock(SWITCHING_STATE);
+    //MutexUnlock(ACCESSING_OBJECTS);
     //Global.mutex.unlock();
 }
 void LoadMenu::update() {
+    //MutexLock(SWITCHING_STATE);
+    //MutexLock(ACCESSING_OBJECTS);
+    MutexLock(ACCESSING_OBJECTS);
     Global.enableMouse = true;
     dir_list.update();
     select.update();
     back.update();
     close.update();
+    MutexUnlock(ACCESSING_OBJECTS);
     
     if(close.action){
+        MutexLock(SWITCHING_STATE);
         Global.CurrentState->unload();
         Global.CurrentState.reset(new MainMenu());
+        Global.CurrentState->init();
+        MutexUnlock(SWITCHING_STATE);
     }
-
+    MutexLock(ACCESSING_OBJECTS);
     if(select.action or dir_list.action){
         if(dir_list.objects.size() > 0 and dir_list.objects[dir_list.selectedindex].text.size() > 0){
             if(dir_list.objects[dir_list.selectedindex].text[dir_list.objects[dir_list.selectedindex].text.size()-1] == '/'){
@@ -188,8 +233,15 @@ void LoadMenu::update() {
         dir_list.init();
         path = TextBox(path.position, path.size, path.color, Global.Path, path.textcolor, path.textsize, path.maxlength);
     }
+    MutexUnlock(ACCESSING_OBJECTS);
+    //MutexUnlock(SWITCHING_STATE);
+    //MutexUnlock(ACCESSING_OBJECTS);
 }
 void LoadMenu::unload() {
+    //MutexLock(SWITCHING_STATE);
+    //MutexUnlock(SWITCHING_STATE);
+}
+void LoadMenu::textureOps() {
 
 }
 
@@ -200,36 +252,44 @@ MainMenu::MainMenu() {
     load = Button({390,420}, {120,60}, {255,135,198,255}, "Load", BLACK, 20);
     volume = TestSlider({510,460}, {240,20}, BLACK, PURPLE, WHITE, WHITE);
 }
+
 void MainMenu::init() {
+    //MutexLock(SWITCHING_STATE);
     Global.NeedForBackgroundClear = true;
     Global.LastFrameTime = getTimer();
     Global.FrameTime = 0.5;
     Global.useAuto = false;
     volume.location = Global.volume * 100.0f;
     setlocale(LC_ALL, "en_US.utf8");
+    //MutexUnlock(SWITCHING_STATE);
 }
 
 void toupper(std::string &s) {
   for (char &c : s)
     c = std::toupper(c);
 }
-
 bool strcasecmp2(std::string lhs, std::string rhs) {
   toupper(lhs); toupper(rhs);
   return lhs < rhs;
 }
 
 void MainMenu::update() {
+
+    //MutexLock(SWITCHING_STATE);
+    //MutexLock(ACCESSING_OBJECTS);
+    MutexLock(ACCESSING_OBJECTS);
     Global.enableMouse = true;
     play.update();
     wip.update();
     wip2.update();
     load.update();
+    MutexUnlock(ACCESSING_OBJECTS);
     //test.update();
     if(wip.action){
         //Global.CurrentState->unload();
         //Global.CurrentState.reset(new WIPMenu());
         //Global.CurrentState->init();
+        MutexLock(ACCESSING_OBJECTS);
         std::string temp = Global.Path;
         Global.Path = "sdmc:/3ds/database";
 
@@ -343,10 +403,12 @@ void MainMenu::update() {
             fclose(pFile);
         }
         Global.Path = temp;
-
+        MutexUnlock(ACCESSING_OBJECTS);
         return;
     }
     else if(play.action){
+        
+        MutexLock(SWITCHING_STATE);
         //std::cout << "play.action unload" << std::endl;
         Global.CurrentState->unload();
         //std::cout << "play.action reset" << std::endl;
@@ -354,18 +416,26 @@ void MainMenu::update() {
         //std::cout << "play.action init" << std::endl;
         Global.CurrentState->init();
         //std::cout << "play.action done" << std::endl;
+        MutexUnlock(SWITCHING_STATE);
         return;
     }
     else if(load.action){
+        
+        MutexLock(SWITCHING_STATE);
         Global.CurrentState->unload();
         Global.CurrentState.reset(new LoadMenu());
         Global.CurrentState->init();
+        MutexUnlock(SWITCHING_STATE);
         return;
     }
     else if(wip2.action){
+        
+        MutexLock(SWITCHING_STATE);
         Global.CurrentState->unload();
         Global.CurrentState.reset(new WipMenu2());
         Global.CurrentState->init();
+        MutexUnlock(SWITCHING_STATE);
+        return;
     }
 
     if(IsKeyDown(KEY_SELECT ))
@@ -376,65 +446,110 @@ void MainMenu::update() {
         //std::cout << "Volume: " << Global.volume << std::endl;
         Global.volumeChanged = true;
     }
+    //MutexUnlock(SWITCHING_STATE);
+    //MutexUnlock(ACCESSING_OBJECTS);
 }
 void MainMenu::render() {
     //Global.mutex.lock();
+    //MutexLock(SWITCHING_STATE);
+    //MutexLock(ACCESSING_OBJECTS);
+    MutexLock(ACCESSING_OBJECTS);
     DrawTextureCenter(&Global.OsusLogo, 320, 200, 400.0 / (float)Global.OsusLogo.width, WHITE);
     play.render();
     wip.render();
     wip2.render();
     load.render();
-    
+    MutexUnlock(ACCESSING_OBJECTS);
     if(IsKeyDown(KEY_SELECT ))
         volume.render();
+    //MutexUnlock(SWITCHING_STATE);
+    //MutexUnlock(ACCESSING_OBJECTS);
     //test.render();
     //Global.mutex.unlock();
 }
-
 void MainMenu::unload() {
+    //MutexLock(SWITCHING_STATE);
+    //MutexUnlock(SWITCHING_STATE);
+}
+void MainMenu::textureOps() {
     //NEED FIXING>>> UNLOADING DOESNT STOP RENDEWRING
 }
 
 Game::Game() {
     volume = TestSlider({510,460}, {240,20}, BLACK, PURPLE, WHITE, WHITE);
 }
+
 void Game::init() {
+    //MutexLock(SWITCHING_STATE);
     Global.NeedForBackgroundClear = true;
     Global.useAuto = false;
     initDone = 0;
     Global.LastFrameTime = getTimer();
-    std::cout << Global.selectedPath << std::endl;
-    
+    //std::cout << Global.selectedPath << std::endl;
+
+    Global.GameTextures = 0;
     Global.numberLines = 0;
     Global.parsedLines = 0;
     Global.loadingState = 0;
     initDone = -2;
     initStartTime = getTimer();
-    Global.mutex.unlock();
+    //Global.mutex.unlock();
     //LightLock_Unlock(&Global.lightlock);
+    //MutexUnlock(SWITCHING_STATE); 
+    //While loading the game chaos can happen, no problem
+    
+    MutexUnlock(SWITCHING_STATE);
+    
     Global.gameManager->loadGame(Global.selectedPath);
-
+    MutexLock(ACCESSING_OBJECTS);
+    MutexUnlock(ACCESSING_OBJECTS);
+    MutexLock(SWITCHING_STATE);
+    //MutexLock(SWITCHING_STATE);
     Global.gameManager->timingSettingsForHitObject.clear();
-    Global.mutex.lock();
+    //Global.mutex.lock();
     //LightLock_Lock(&Global.lightlock);
     Global.startTime = -5000.0f;
     Global.errorSum = 0;
     Global.errorLast = 0;
     Global.errorDiv = 0;
-
+    
     volume.location = Global.volume * 100.0f;
+    //MutexLock(SWITCHING_STATE);
     
 }
 void Game::update() {
+
+    if(IsKeyDown(KEY_SELECT ))
+        volume.update();
+    float lastVolume = Global.volume;
+    Global.volume = volume.location / 100.0f;
+    if(!AreSame(lastVolume, Global.volume)){
+        //std::cout << "Volume: " << Global.volume << std::endl;
+        Global.volumeChanged = true;
+    }
+
     if(initDone == 1){
         //Global.enableMouse = false;
-        Global.gameManager->run();
+        MutexLock(ACCESSING_OBJECTS);
         if(IsKeyPressed(KEY_B)){
+            Global.CurrentState->initDone = 3;
+            MutexUnlock(ACCESSING_OBJECTS);
+
+			MutexLock(RENDER_BLOCK);
+            MutexLock(ACCESSING_OBJECTS);
+            MutexUnlock(RENDER_BLOCK);
+
+			MutexLock(SWITCHING_STATE);
+            std::cout << "locked the switching state\n";
             Global.CurrentState->unload();
+            MutexUnlock(ACCESSING_OBJECTS);
             Global.CurrentState.reset(new PlayMenu());
             Global.CurrentState->init();
+            MutexUnlock(SWITCHING_STATE);
             return;
         }
+        Global.gameManager->run();
+        MutexUnlock(ACCESSING_OBJECTS);
     }
     else{
         if(initDone == 0 or Global.GameTextures == 0){
@@ -445,19 +560,13 @@ void Game::update() {
             initDone = true;
         }
     }
-    if(IsKeyDown(KEY_SELECT ))
-        volume.update();
-    float lastVolume = Global.volume;
-    Global.volume = volume.location / 100.0f;
-    if(!AreSame(lastVolume, Global.volume)){
-        //std::cout << "Volume: " << Global.volume << std::endl;
-        Global.volumeChanged = true;
-    }
+
 }
 void Game::render() {
     
     if(initDone == 1){
         //Global.enableMouse = false;
+        MutexLock(ACCESSING_OBJECTS);
         Global.gameManager->render();
         //Global.mutex.lock();
         if(IsMusicStreamPlaying(&Global.gameManager->backgroundMusic)){
@@ -474,6 +583,8 @@ void Game::render() {
         if(GetMusicTimeLength(&Global.gameManager->backgroundMusic) != 0){
             DrawLineEx({0, GetScreenHeight() - Scale(2)}, {GetScreenWidth() * ((Global.currentOsuTime/1000.0) / GetMusicTimeLength(&Global.gameManager->backgroundMusic)), GetScreenHeight() - Scale(2)}, Scale(3), Fade(WHITE, 0.8));
         }
+        MutexUnlock(ACCESSING_OBJECTS);
+
         //Global.mutex.unlock();
     }
     else if(initDone == -1){
@@ -530,10 +641,27 @@ void Game::render() {
     if(IsKeyDown(KEY_SELECT ))
         volume.render();
 }
-
 void Game::unload(){
+    //MutexLock(SWITCHING_STATE);
+    //MutexLock(ACCESSING_OBJECTS);
     Global.gameManager->unloadGame();
     Global.NeedForBackgroundClear = true;
+    //MutexUnlock(ACCESSING_OBJECTS);
+    //MutexUnlock(SWITCHING_STATE);
+}
+void Game::textureOps(){
+    //std::cout << "Trying to acquire Lock for accessing objects\n";
+    MutexLock(ACCESSING_OBJECTS);
+    //std::cout << "Got Permission!\n";
+    if(Global.GameTextures == -1){
+        Global.gameManager->unloadGameTextures();
+    }
+    else if(Global.GameTextures == 1)
+        Global.gameManager->loadGameTextures();
+
+    if(Global.sliderTexNeedDeleting)
+        Global.gameManager->unloadSliderTextures();
+    MutexUnlock(ACCESSING_OBJECTS);
 }
 
 WIPMenu::WIPMenu() {
@@ -1014,17 +1142,25 @@ void WIPMenu::update(){
         init();
     }
     if(IsKeyPressed(KEY_B ) and !CanGoBack){
+        MutexLock(SWITCHING_STATE);
         Global.CurrentState->unload();
         Global.CurrentState.reset(new MainMenu());
+        Global.CurrentState->init();
+        MutexUnlock(SWITCHING_STATE);
     }
 
 }
 void WIPMenu::unload(){
+    //MutexLock(SWITCHING_STATE);
     dir.clear();
     subObjects.clear();
     UnloadTexture(&logo);
     UnloadTexture(&back);
     UnloadTexture(&menu);
+    //MutexUnlock(SWITCHING_STATE);
+}
+void WIPMenu::textureOps(){
+    
 }
 
 
@@ -1063,6 +1199,7 @@ void ResultsMenu::init() {
     
 }
 void ResultsMenu::render() {
+    MutexLock(ACCESSING_OBJECTS);
     close.render();
     name.render();
     maxCombo.render();
@@ -1070,17 +1207,26 @@ void ResultsMenu::render() {
     hit100.render();
     hit50.render();
     hit0.render();
+    MutexUnlock(ACCESSING_OBJECTS);
     //Global.mutex.unlock();
 }
 void ResultsMenu::update() {
+    MutexLock(ACCESSING_OBJECTS);
     close.update();
+    MutexUnlock(ACCESSING_OBJECTS);
     if(close.action){
+        MutexLock(SWITCHING_STATE);
         Global.CurrentState->unload();
         Global.CurrentState.reset(new PlayMenu());
         Global.CurrentState->init();
+        MutexUnlock(SWITCHING_STATE);
     }
 }
 void ResultsMenu::unload() {
+    //MutexLock(SWITCHING_STATE);
+    //MutexUnlock(SWITCHING_STATE);
+}
+void ResultsMenu::textureOps() {
 
 }
 
@@ -1111,9 +1257,8 @@ void WipMenu2::init() {
     canAddStuff = true;
     canRemoveStuff = false;
 }
-
 void WipMenu2::update() {
-    
+    MutexLock(ACCESSING_OBJECTS);
     if(Global.Key2P && addStuffAt == -1 && removeStuffAt == -1){
         removeStuffAt = lastStuffAt;
         addStuffAt = (lastStuffAt + 1) % 16;
@@ -1193,8 +1338,6 @@ void WipMenu2::update() {
     
 
     accel += ((-accel) / 2.0f) * ((float)(Global.FrameTime / 1000.0f) * 8.0f);
-}
-void WipMenu2::render(){
     if(removeStuffAt >= 0 and canRemoveStuff == true){
         auto beginIt = locations.begin();
         int i = 0;
@@ -1308,6 +1451,11 @@ void WipMenu2::render(){
         lastStuffAt = addStuffAt;
         addStuffAt = -1;
     }
+    
+    MutexUnlock(ACCESSING_OBJECTS);
+}
+void WipMenu2::render(){
+    MutexLock(ACCESSING_OBJECTS);
     Rectangle rect;
     rect.x = 322;
     rect.y = 240 -  18;
@@ -1356,10 +1504,23 @@ void WipMenu2::render(){
             DrawTextEx(&Global.DefaultFont, name.c_str(), {(int)ScaleCordX(r.x + 10), (int)ScaleCordY(r.y + 18 - 10)}, Scale(20.05), Scale(2), BLACK);
         }
     }
-    
+    MutexUnlock(ACCESSING_OBJECTS);
 }
-
 void WipMenu2::unload() {
+    //MutexLock(SWITCHING_STATE);
+    MutexLock(ACCESSING_OBJECTS);
+    locations.clear();
+    locations = std::list<MenuItem>();
+
+    folderNames.clear();
+    folderNames = std::vector<std::string>();
+
+    itemNames.clear();
+    itemNames = std::vector<std::string>();
+    MutexUnlock(ACCESSING_OBJECTS);
+    //MutexUnlock(SWITCHING_STATE);
+}
+void WipMenu2::textureOps() {
     locations.clear();
     locations = std::list<MenuItem>();
 

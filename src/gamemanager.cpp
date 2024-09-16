@@ -229,7 +229,7 @@ void GameManager::update(){
 			break;
 	}
 	*/
-	Global.mutex2.lock();
+	//Global.mutex2.lock();
 	int size = gameFile.hitObjects.size();	
 	for(int i = size-1; i >= 0; i--){
 		if(gameFile.hitObjects[i].time - gameFile.preempt <= currentTime*1000.0f){
@@ -608,7 +608,7 @@ void GameManager::update(){
 		followLines.pop_back();
 	}
 
-	Global.mutex2.unlock();
+	//Global.mutex2.unlock();
 }
 
 //main rendering loop
@@ -622,7 +622,8 @@ void GameManager::unloadSliderTextures(){
 		}
 		////Global.mutex.unlock();
 	}*/
-
+	//Global.mutex.lock();
+    //LightLock_Lock(&Global.lightlock);
 	Node * deadHitObjectNode = deadObjectsLinkedList.getHead();
 	Node * deadHitObjectNodeNext;
 	HitObject* deadHitObject;
@@ -641,12 +642,37 @@ void GameManager::unloadSliderTextures(){
 		
 		deadHitObjectNode = deadHitObjectNodeNext;
 	}
+	Node * HitObjectNode = objectsLinkedList.getHead();
+	Node * HitObjectNodeNext;
+	HitObject* hitObject;
+	while(true){
+		if(HitObjectNode == NULL){
+			break;
+		}
+		hitObject = (HitObject*)HitObjectNode->object;
+		HitObjectNodeNext = HitObjectNode->next;
 
+		if(hitObject->data.type == 2){
+			if(Slider* tempslider = dynamic_cast<Slider*>(hitObject)){
+				tempslider->unloadTextures();
+			}
+		}
+		
+		HitObjectNode = HitObjectNodeNext;
+	}
 
+	//Global.mutex.unlock();
+    //LightLock_Unlock(&Global.lightlock);
 	Global.sliderTexNeedDeleting = false;
 }
 
 void GameManager::render(){
+	if(Global.GameTextures == 15){
+		return;
+	}
+	if(Global.GameTextures == -1){
+		return;
+	}
 	Global.NeedForBackgroundClear = true;
 	if(currentBackgroundTexture.length() > 0 && backgroundTextures.loaded[currentBackgroundTexture].value){
 		//std::cout << currentBackgroundTexture << std::endl;
@@ -668,7 +694,7 @@ void GameManager::render(){
 	/*for(int i = objects.size() - 1; i >= 0; i--){
 		objects[i]->render();
 	}*/
-	Global.mutex2.lock();
+	//Global.mutex2.lock();
 	Node * hitObjectNode = objectsLinkedList.getTail();
 	Node * hitObjectNodeNext;
 	HitObject* hitObject;
@@ -703,7 +729,7 @@ void GameManager::render(){
 		
 		deadHitObjectNode = deadHitObjectNodeNext;
 	}
-	Global.mutex2.unlock();
+	//Global.mutex2.unlock();
 	DrawCNumbersCenter(score, 320, 10, 0.4f, WHITE);
 	DrawCNumbersLeft(clickCombo, 15, 460, 0.6f, WHITE);
 
@@ -788,9 +814,25 @@ void GameManager::run(){
 					break;
 			}
 			//std::cout << "waiting done\n";
+			/*MutexUnlock(ACCESSING_OBJECTS);
+			MutexLock(SWITCHING_STATE);
+			MutexLock(ACCESSING_OBJECTS);
+			MutexUnlock(SWITCHING_STATE);
+			MutexLock(SWITCHING_STATE);*/
+			Global.CurrentState->initDone = 3;
+            MutexUnlock(ACCESSING_OBJECTS);
+
+			MutexLock(RENDER_BLOCK);
+            MutexLock(ACCESSING_OBJECTS);
+            MutexUnlock(RENDER_BLOCK);
+
+			MutexLock(SWITCHING_STATE);
 			Global.CurrentState->unload();
+			MutexUnlock(ACCESSING_OBJECTS);
             Global.CurrentState.reset(new ResultsMenu());
             Global.CurrentState->init();
+			MutexLock(ACCESSING_OBJECTS);
+			MutexUnlock(SWITCHING_STATE);
 			return;
 		}
 		
@@ -1769,13 +1811,24 @@ void GameManager::unloadGame(){
 
 	SoundFiles.data.clear();
 	SoundFiles.loaded.clear();
+	//Global.mutex.unlock();
+	//LightLock_Unlock(&Global.lightlock);
 
+	MutexUnlock(ACCESSING_OBJECTS);
+	std::cout << "unlocking the hold access lock\n";
+	//MutexUnlock(SWITCHING_STATE);
 	while(true){
-		SleepInMs(5);
+		SleepInMs(500);
+		std::cout << "waiting for textures to unload\n";
 		if(Global.GameTextures == 15)
 			break;
+		
 	}
+	//MutexLock(SWITCHING_STATE);
+	MutexLock(ACCESSING_OBJECTS);
 
+	//Global.mutex.lock();
+	//LightLock_Lock(&Global.lightlock);
 
 
 	gameFile.hitObjects.clear();
@@ -1794,7 +1847,7 @@ void GameManager::unloadGame(){
 	followLines = std::vector<FollowPoint>();
 
 	
-	Global.mutex2.lock();
+	//Global.mutex2.lock();
 	while(true){
 		if(objectsLinkedList.getHead() == NULL)
 			break;
@@ -1809,7 +1862,8 @@ void GameManager::unloadGame(){
 		delete deadObjectsLinkedList.getHead()->object;
 		deadObjectsLinkedList.deleteHead();
 	}
-	Global.mutex2.unlock();
+	
+	//Global.mutex2.unlock();
 }
 
 void GameManager::spawnHitObject(HitObjectData data){
@@ -1884,6 +1938,10 @@ void GameManager::loadGameTextures(){
 	//sliderout = LoadTexture("sdmc:/3ds/resources/SliderBlank.png");
 	//UnloadImage(tempImage2);
     //sliderout = LoadTexture("sdmc:/3ds/resources/sliderout.png");
+	C2D_Prepare();
+    C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
+    C2D_SceneBegin(Global.window);
+
 	sliderInnerBall = LoadRenderTexture(64, 64);
 	sliderOuterBall = LoadRenderTexture(64, 64);	
 	
@@ -1909,7 +1967,8 @@ void GameManager::loadGameTextures(){
     SetTextureFilter(&sliderInnerBall.texture, TEXTURE_FILTER_BILINEAR);
 
 
-
+	C2D_Flush();  //test
+    C3D_FrameEnd(0);
 
 	followPoint = LoadTexture("sdmc:/3ds/resources/followpoint.png");
     loadDefaultSkin(Global.selectedPath); // LOADING THE DEFAULT SKIN USING A SEPERATE FUNCTION
@@ -1955,7 +2014,7 @@ void GameManager::loadGameTextures(){
 	for(int i = 0; i < (int)gameFile.events.size(); i++){
 		if(gameFile.events[i].eventType == 0){
 			std::cout << "Time: " << gameFile.events[i].startTime << "ms - Filename: " << gameFile.events[i].filename << '.' << std::endl;
-			if(gameFile.events[i].startTime < 1000){
+			if(gameFile.events[i].startTime < 10000){
 				gameFile.events[i].startTime -= 87000;
 				std::cout << "Time changed to: " << gameFile.events[i].startTime << std::endl;
 			}
@@ -1963,10 +2022,10 @@ void GameManager::loadGameTextures(){
 	}
 	
 
-	std::cout << "Found this many files: " << files.size() << std::endl;
+	/*std::cout << "Found this many files: " << files.size() << std::endl;
 	for(int i = 0; i < files.size(); i++){
 		std::cout << files[i] << std::endl;
-	}
+	}*/
 
 	for(int i = 0; i < files.size(); i++){
 		for(int j = 0; j < (int)gameFile.events.size(); j++){
@@ -1981,9 +2040,9 @@ void GameManager::loadGameTextures(){
 				while(gameFile.events[j].filename[t] == ' ' and gameFile.events[j].filename.size() > 0){
 					gameFile.events[j].filename.erase(gameFile.events[j].filename.begin());
 				}
-				std::cout << "finding function returned: " << files[i].rfind(gameFile.events[j].filename, 0) << " for: " << gameFile.events[j].filename << " and " << files[i] << std::endl;
+				//std::cout << "finding function returned: " << files[i].rfind(gameFile.events[j].filename, 0) << " for: " << gameFile.events[j].filename << " and " << files[i] << std::endl;
 				if(files[i].rfind(gameFile.events[j].filename, 0) == 0){
-					std::cout << "WHAT DA HEEEEEEEEEELLLLLLLLLLLLL" << std::endl;
+					//std::cout << "WHAT DA HEEEEEEEEEELLLLLLLLLLLLL" << std::endl;
 					Image image = LoadImage((Global.Path + files[i]).c_str());
 					//ImageColorBrightness(&image, -128);
 					
@@ -1992,18 +2051,19 @@ void GameManager::loadGameTextures(){
 						if(image.width / divider > 256 or image.height / divider > 128){
 							divider += 1;
 							std::cout << "TOO BIG OF AN IMAGE!" << std::endl;
-							std::cout << "RESIZING TO" << (int)(image.height / divider) << " x " << (int)(image.width / divider) << std::endl;
+							
 						}
 						else{
 							break;
 						}
 					}
-					std::cout << "resize" << std::endl;
+					std::cout << "RESIZING TO" << (int)(image.height / divider) << " x " << (int)(image.width / divider) << std::endl;
+					//std::cout << "resize" << std::endl;
 					//SleepInMs(200);
 					int resizeW = (int)(image.width / divider);
 					int resizeH = (int)(image.height / divider);
 					ImageResize(&image, resizeW, resizeH);
-					std::cout << "T " << image.width << " " << image.height << std::endl;
+					//std::cout << "T " << image.width << " " << image.height << std::endl;
 
 					ImageColorTint(&image, Color{30,30,30,255});
 					ImageBlurGaussian(&image, 0.3f);
@@ -2073,11 +2133,11 @@ void GameManager::unloadGameTextures(){
 
 
 	Global.GameTextures = 10;
-
+	std::cout << "Unloading SUTUFF" << std::endl;
 	backgroundTextures.data.clear();
     backgroundTextures.pos.clear();
     backgroundTextures.loaded.clear();
-	Global.mutex2.lock();
+	//Global.mutex2.lock();
 	Node * deadHitObjectNode = deadObjectsLinkedList.getHead();
 	Node * deadHitObjectNodeNext;
 	HitObject* deadHitObject;
@@ -2091,13 +2151,39 @@ void GameManager::unloadGameTextures(){
 		if(deadHitObject->data.type == 2){
 			if(Slider* tempslider = dynamic_cast<Slider*>(deadHitObject)){
 				tempslider->readyToDelete = true;
+				std::cout << "Unloading SLIDER" << std::endl;
 			}
 		}
 		
 		deadHitObjectNode = deadHitObjectNodeNext;
 	}
+
+	Node * HitObjectNode = objectsLinkedList.getHead();
+	Node * HitObjectNodeNext;
+	HitObject* hitObject;
+	while(true){
+		if(HitObjectNode == NULL){
+			break;
+		}
+		hitObject = (HitObject*)HitObjectNode->object;
+		HitObjectNodeNext = HitObjectNode->next;
+
+		if(hitObject->data.type == 2){
+			if(Slider* tempslider = dynamic_cast<Slider*>(hitObject)){
+				tempslider->readyToDelete = true;
+				std::cout << "Unloading SLIDER" << std::endl;
+			}
+		}
+		
+		HitObjectNode = HitObjectNodeNext;
+	}
+
+	//Global.mutex.unlock();
+    //LightLock_Unlock(&Global.lightlock);
 	unloadSliderTextures();
-	Global.mutex2.unlock();
+	//Global.mutex.lock();
+    //LightLock_Lock(&Global.lightlock);
+	//Global.mutex2.unlock();
 	Global.GameTextures = 15;
 }
 

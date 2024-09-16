@@ -26,6 +26,11 @@
 #include "settingsParser.hpp"
 //#include "SDLutils.hpp"
 
+Globals Global;
+LightLock stateLock;
+LightLock accessLock;
+LightLock osuGameLock;
+LightLock wholeRenderLock;
 
 u32 __stacksize__= 512 * 1024;
 
@@ -51,7 +56,7 @@ bool dumbsleep = false;
 
 
 //hello from arch!
-Globals Global;
+
 
 
 void RenderLoop(void *){
@@ -65,10 +70,6 @@ void RenderLoop(void *){
 
     std::cout << "C2D INIT\n";
     
-    std::cout << "parsing the settings.ini file...\n";
-    parseSettings();
-    
-    InitAudioDevice();
     
     if(Global.useTopScreen){
         Global.window = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT);
@@ -87,114 +88,6 @@ void RenderLoop(void *){
     C2D_Flush();  //test
     C3D_FrameEnd(0);
 
-    int loc = 0;
-    int lastFPS = 0;
-    while(!WindowShouldClose() and !Global.stop){
-        auto t1 = std::chrono::steady_clock::now();
-        last = getTimer();
-        //rlViewport(0, 0, GetScreenWidth(), GetScreenHeight());
-
-        //std::cout << "begin\n";
-        C2D_Prepare();
-        C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
-        C2D_SceneBegin(Global.window);
-        
-        //C2D_Prepare();
-        Global.mutex.lock();
-        //LightLock_Lock(&Global.lightlock);
-        //ClearBackground(Global.Background);
-        if(Global.NeedForBackgroundClear)
-            ClearBackground(Global.Background);
-        if(Global.GameTextures == -1)
-            Global.gameManager->unloadGameTextures();
-        else if(Global.GameTextures == 1)
-            Global.gameManager->loadGameTextures();
-            
-        Global.CurrentState->render();
-        
-
-        //DrawTextureCenter(Global.cursor, GetMouseX(), GetMouseY() , 0.1f, {255,255,255,255});
-
-        DrawRectangle(ScaleCordX(580), ScaleCordY(450), Scale(20), Scale(20),(Color) {0, (unsigned char)(255 * (int)Global.Key1P), (unsigned char)(255 * (int)Global.Key1D), 100});
-        DrawRectangle(ScaleCordX(610), ScaleCordY(450), Scale(20), Scale(20), (Color){0, (unsigned char)(255 * (int)Global.Key2P), (unsigned char)(255 * (int)Global.Key2D), 100});
-        renderMouse(); 
-
-
-
-
-        DrawTextEx(&Global.DefaultFont, TextFormat("FPS: %.3f TPS: %.3f",  avgFPS, avgHZ), {(int)ScaleCordX(5), (int)ScaleCordY(5)}, Scale(20.05), Scale(2), GREEN);
-        if(C3D_GetCmdBufUsage() > 0.8f){
-            std::cout << "NEARLY OVERFLOWING THE COMMAND BUFFER, BEWARE: " << C3D_GetCmdBufUsage() * 100.0f << "%\n";
-        }
-        C2D_Flush();  //test
-        
-        C3D_FrameEnd(0);
-
-        if(Global.sliderTexNeedDeleting)
-            Global.gameManager->unloadSliderTextures();
-        Global.mutex.unlock();
-        std::chrono::duration<double, std::milli> elapsed {std::chrono::steady_clock::now() - t1};
-        double fps = (1000.0f / (elapsed.count()));
-        lastFPS = fps;
-        if(lastFPS > 511)
-            lastFPS = 511;
-        //if(elapsed.count() > 20 and VSYNC == 0)
-        //    std::cout << "dropped frame with " << elapsed.count() << "ms\n";
-        avgFPSq.push(fps);
-        avgFPSqueueSUM += fps;
-        if(avgFPSq.size() > 300){
-            avgFPSqueueSUM -= avgFPSq.front();
-            avgFPSq.pop();
-        }
-        avgFPS = avgFPSqueueSUM / (double)(avgFPSq.size());
-
-    }
-    //UnloadRenderTexture(frameGraph);
-}
-
-
-
-
-int main(){
-    
-    osSetSpeedupEnable(true);
-    gfxInitDefault();
-    aptSetSleepAllowed(true);
-    consoleGetDefault()->fg = 23;
-    if(Global.useTopScreen){
-        consoleInit(GFX_BOTTOM, NULL);
-    }
-    else{
-        consoleInit(GFX_TOP, NULL);
-    }
-
-    //consoleGetDefault()->flags &= ~CONSOLE_COLOR_BOLD;
-	//consoleGetDefault()->flags |= CONSOLE_COLOR_FAINT;
-    consoleGetDefault()->fg = 23;
-    std::cout << "Loaded gpu\n";
-
-    //SDL_SetMainReady();
-    Global.CurrentState = std::make_shared<MainMenu>();
-    for(int i = 0; i < Global.GamePath.size(); i++) {
-        if (Global.GamePath[i] == '\\')
-            Global.GamePath[i] = '/';
-    }
-    
-    //LightLock_Init(&Global.lightlock);
-
-    std::cout << "Loaded gamepath\n";
-    //SetTraceLogLevel(LOG_WARNING); //LOG_WARNING
-    InitAudioDevice();
-    std::cout << linearSpaceFree() << std::endl;    
-    Global.linearSpaceFree = linearSpaceFree();
-	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    //SetConfigFlags(FLAG_MSAA_4X_HINT);
-    SetAudioStreamBufferSizeDefault(128);
-    //InitWindow(640, 480, "osus - amogus");
-    
-    //SDL_Surface* pIcon = SDL_CreateRGBSurface(0,64,64,32,0,0,0,0);;
-    //SDL_SetWindowIcon((SDL_Window*)GetWindowSDL(), pIcon);
-    //SDL_FreeSurface(pIcon);
     Global.OsusLogo = LoadTexture("sdmc:/3ds/resources/osus.png");
     std::cout << "Loaded logo\n";
     
@@ -252,11 +145,125 @@ int main(){
 
     SetTextureFilter(&Global.DefaultFont.texture, TEXTURE_FILTER_POINT);
     SetTextureFilter(&Global.cursor, TEXTURE_FILTER_BILINEAR);
-
-
     SetTextureFilter(&Global.OsusLogo, TEXTURE_FILTER_BILINEAR);
 
     std::cout << "Loaded all files and filters\n";
+
+
+    int loc = 0;
+    int lastFPS = 0;
+    while(!WindowShouldClose() and !Global.stop){
+        auto t1 = std::chrono::steady_clock::now();
+        last = getTimer();
+        //rlViewport(0, 0, GetScreenWidth(), GetScreenHeight());
+
+        //std::cout << "begin\n";
+        MutexLock(RENDER_BLOCK);
+        Global.CurrentState->textureOps();
+
+        C2D_Prepare();
+        C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
+        C2D_SceneBegin(Global.window);
+
+
+        if(Global.NeedForBackgroundClear)
+            ClearBackground(Global.Background);
+        
+        MutexLock(SWITCHING_STATE);
+        Global.CurrentState->render();
+        MutexUnlock(SWITCHING_STATE);
+        MutexUnlock(RENDER_BLOCK);
+        DrawRectangle(ScaleCordX(580), ScaleCordY(450), Scale(20), Scale(20),(Color) {0, (unsigned char)(255 * (int)Global.Key1P), (unsigned char)(255 * (int)Global.Key1D), 100});
+        DrawRectangle(ScaleCordX(610), ScaleCordY(450), Scale(20), Scale(20), (Color){0, (unsigned char)(255 * (int)Global.Key2P), (unsigned char)(255 * (int)Global.Key2D), 100});
+        renderMouse(); 
+
+
+
+
+        DrawTextEx(&Global.DefaultFont, TextFormat("FPS: %.3f TPS: %.3f",  avgFPS, avgHZ), {(int)ScaleCordX(5), (int)ScaleCordY(5)}, Scale(20.05), Scale(2), GREEN);
+        if(C3D_GetCmdBufUsage() > 0.8f){
+            std::cout << "NEARLY OVERFLOWING THE COMMAND BUFFER, BEWARE: " << C3D_GetCmdBufUsage() * 100.0f << "%\n";
+        }
+        C2D_Flush();  //test
+        C3D_FrameEnd(0);
+
+        
+
+        std::chrono::duration<double, std::milli> elapsed {std::chrono::steady_clock::now() - t1};
+        double fps = (1000.0f / (elapsed.count()));
+        lastFPS = fps;
+        if(lastFPS > 511)
+            lastFPS = 511;
+        //if(elapsed.count() > 20 and VSYNC == 0)
+        //    std::cout << "dropped frame with " << elapsed.count() << "ms\n";
+        avgFPSq.push(fps);
+        avgFPSqueueSUM += fps;
+        if(avgFPSq.size() > 300){
+            avgFPSqueueSUM -= avgFPSq.front();
+            avgFPSq.pop();
+        }
+        avgFPS = avgFPSqueueSUM / (double)(avgFPSq.size());
+
+    }
+
+    UnloadTexture(&Global.OsusLogo);
+    UnloadTexture(&Global.cursor);
+    //UnloadFont(&Global.DefaultFont);
+    UnloadFontDefault();
+
+    C2D_Fini();
+	C3D_Fini();
+	
+}
+
+
+
+
+int main(){
+    InitilizeLocks();
+    osSetSpeedupEnable(true);
+    gfxInitDefault();
+    aptSetSleepAllowed(true);
+    consoleGetDefault()->fg = 23;
+
+    std::cout << "parsing the settings.ini file...\n";
+    parseSettings();
+
+    if(Global.useTopScreen){
+        consoleInit(GFX_BOTTOM, NULL);
+    }
+    else{
+        consoleInit(GFX_TOP, NULL);
+    }
+
+    //consoleGetDefault()->flags &= ~CONSOLE_COLOR_BOLD;
+	//consoleGetDefault()->flags |= CONSOLE_COLOR_FAINT;
+    consoleGetDefault()->fg = 23;
+    std::cout << "Loaded gpu\n";
+
+    //SDL_SetMainReady();
+    Global.CurrentState = std::make_shared<MainMenu>();
+    for(int i = 0; i < Global.GamePath.size(); i++) {
+        if (Global.GamePath[i] == '\\')
+            Global.GamePath[i] = '/';
+    }
+    
+    //LightLock_Init(&Global.lightlock);
+
+    std::cout << "Loaded gamepath\n";
+    //SetTraceLogLevel(LOG_WARNING); //LOG_WARNING
+    InitAudioDevice();
+    std::cout << linearSpaceFree() << std::endl;    
+    Global.linearSpaceFree = linearSpaceFree();
+	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+    //SetConfigFlags(FLAG_MSAA_4X_HINT);
+    SetAudioStreamBufferSizeDefault(128);
+    //InitWindow(640, 480, "osus - amogus");
+    
+    //SDL_Surface* pIcon = SDL_CreateRGBSurface(0,64,64,32,0,0,0,0);;
+    //SDL_SetWindowIcon((SDL_Window*)GetWindowSDL(), pIcon);
+    //SDL_FreeSurface(pIcon);
+    
     //std::cout << "Global.cursor size: " << Global.cursor.width << " x " << Global.cursor.height << " y \n";
     double avgFrameTime;
     HideCursor();
@@ -266,23 +273,8 @@ int main(){
 
     Global.LastFrameTime = getTimer();
     double lastFrame = getTimer();
-    Global.GameTextures = 0;
+    
     std::cout << "Starting render loop\n";
-    /*while(true){
-        PollInputEvents();
-        if(IsKeyDown(KEY_SELECT)){
-            while(true){
-                PollInputEvents();
-                if(!IsKeyDown(KEY_SELECT)){
-                    break;
-                }
-                svcSleepThread(10000);
-            }
-            break;
-        }
-        svcSleepThread(10000);
-    }*/
-    //std::thread rend(RenderLoop);
     std::cout << "Free Vram: " << vramSpaceFree() << std::endl;
 	std::cout << "Free M_ALL: " << osGetMemRegionFree(MEMREGION_ALL) << "/" << osGetMemRegionSize(MEMREGION_ALL) << std::endl;
 	std::cout << "Free M_APP: " << osGetMemRegionFree(MEMREGION_APPLICATION) << "/" << osGetMemRegionSize(MEMREGION_APPLICATION) << std::endl;
@@ -298,7 +290,7 @@ int main(){
     while(!WindowShouldClose() and aptMainLoop()){
         double timerXXX = getTimer();
         auto t1 = std::chrono::steady_clock::now();
-        Global.mutex.lock();
+        //Global.mutex.lock();
         //LightLock_Lock(&Global.lightlock);
         PollInputEvents();
         GetScale();
@@ -313,7 +305,7 @@ int main(){
         updateMouseTrail();
         Global.CurrentState->update();
         
-        Global.mutex.unlock();
+        //Global.mutex.unlock();
         //LightLock_Unlock(&Global.lightlock);
 
         std::chrono::duration<double, std::milli> sleepTime {std::chrono::steady_clock::now() - t1};
@@ -334,22 +326,23 @@ int main(){
         }
         avgHZ = avgHZqueueSUM / (double)(avgHZq.size());
     }
+    
+    std::cout << "exiting...\n";
+    MutexLock(RENDER_BLOCK);
+    std::cout << "unloading current situation\n";
     Global.stop = true;
-
     Global.CurrentState->unload();
+    SleepInMs(1000);
+    std::cout << "unloaded\n";
+    MutexUnlock(RENDER_BLOCK);
 
     threadJoin(renderThread, U64_MAX);
     threadFree(renderThread);
 
-    Global.CurrentState->unload();
+    //Global.CurrentState->unload();
 
-    UnloadTexture(&Global.OsusLogo);
-    UnloadTexture(&Global.cursor);
-    //UnloadFont(&Global.DefaultFont);
-    UnloadFontDefault();
+    std::cout << "bye bye ~!\n";
 
-    C2D_Fini();
-	C3D_Fini();
-	gfxExit();
+    gfxExit();
     return 0;
 }

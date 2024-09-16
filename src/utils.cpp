@@ -8,6 +8,57 @@
 #include <ctype.h>
 #include <parser.hpp>
 
+
+
+
+void InitilizeLocks(){
+    LightLock_Init(&stateLock);
+    LightLock_Init(&accessLock);
+    LightLock_Init(&osuGameLock);
+    LightLock_Init(&wholeRenderLock);
+}
+
+void MutexLock(int i){
+    switch(i){
+        case SWITCHING_STATE:
+            LightLock_Lock(&stateLock);
+            break;
+        case ACCESSING_OBJECTS:
+            LightLock_Lock(&accessLock);
+            break;
+        case OSU_UPDATE:
+            LightLock_Lock(&osuGameLock);
+            break;
+        case RENDER_BLOCK:
+            LightLock_Lock(&wholeRenderLock);
+            break;
+        default:
+            // code block
+            break;
+    }
+}
+
+void MutexUnlock(int i){
+    switch(i){
+        case SWITCHING_STATE:
+            LightLock_Unlock(&stateLock);
+            break;
+        case ACCESSING_OBJECTS:
+            LightLock_Unlock(&accessLock);
+            break;
+        case OSU_UPDATE:
+            LightLock_Unlock(&osuGameLock);
+            break;
+        case RENDER_BLOCK:
+            LightLock_Unlock(&wholeRenderLock);
+            break;
+        default:
+            // code block
+            break;
+    }
+}
+
+
 void updateUpDown(){
     //Get the current state of the mouse wheel
     Global.Wheel = 0; //GetMouseWheelMove();

@@ -13,6 +13,22 @@
     #include "raymath.h"
 //}
 
+
+extern LightLock stateLock;
+extern LightLock accessLock;
+extern LightLock osuGameLock;
+extern LightLock wholeRenderLock;
+
+
+#define SWITCHING_STATE 0
+#define ACCESSING_OBJECTS 1
+#define OSU_UPDATE 2
+#define RENDER_BLOCK 3
+
+void InitilizeLocks();
+void MutexLock(int i);
+void MutexUnlock(int i);
+
 //Update the variables needed for the scrolling
 void updateUpDown();
 

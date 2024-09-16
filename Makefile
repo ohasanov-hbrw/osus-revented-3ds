@@ -55,7 +55,7 @@ APP_AUTHOR      := ohasanov
 #---------------------------------------------------------------------------------
 ARCH	:=	-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
 
-CFLAGS	:=	-Og -g -ggdb -w -Wall -mword-relocations -Wno-psabi \
+CFLAGS	:=	-O2 -w -Wall -mword-relocations -Wno-psabi \
 			-ffunction-sections \
 			$(ARCH)
 
