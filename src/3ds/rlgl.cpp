@@ -1318,6 +1318,9 @@ void DrawCircleWithDepth(Vector2 center, float radius, int segments, float depth
         C2D_Flush(); 
         angle += stepLength;
     }
+
+
+
     C2D_Flush();  //test
 }
 void DrawCircleWithDepthGrad(Vector2 center, float radius, int segments, float depth, Color color, Color color2){
@@ -1377,7 +1380,7 @@ void rlSetBlendFactorsSeparate(GPU_BLENDFACTOR glSrcRGB, GPU_BLENDFACTOR glDstRG
 }
 
 void rlDisableDepthTest(){
-    C3D_DepthTest(true, GPU_ALWAYS, GPU_WRITE_ALL);
+    C3D_DepthTest(false, GPU_ALWAYS, GPU_WRITE_ALL);
     C2D_Flush(); 
 }
 

@@ -1948,13 +1948,19 @@ void GameManager::loadGameTextures(){
 	BeginTextureMode(&sliderOuterBall);
     ClearBackground({0,0,0,0});
 	EndBlendMode();
-	rlEnableDepthTest();
-	DrawCircleWithDepth((Vector2){32, 32}, 31, 60, 0.2f, {255, 255, 255, 255});
+	//rlEnableDepthTest2();
+	//rlDisableDepthTest();
+	rlSetBlendFactorsSeparate(RL_SRC_ALPHA, RL_ONE_MINUS_SRC_ALPHA, RL_SRC_ALPHA, RL_ONE_MINUS_SRC_ALPHA, RL_MAX, RL_MAX);
+	DrawCircleWithDepth((Vector2){32, 32}, 30.5, 64, 0.5f, {255, 255, 255, 255});
+	DrawCircleWithDepth((Vector2){32, 32}, 31.7, 64, 0.4f, {255, 255, 255, 200});
+	DrawCircleWithDepth((Vector2){32, 32}, 31.0, 64, 0.3f, {255, 255, 255, 150});
+	DrawCircleWithDepth((Vector2){32, 32}, 31.3, 64, 0.2f, {255, 255, 255, 50});
 	//rlSetBlendFactorsSeparate(RL_SRC_ALPHA, RL_ONE_MINUS_SRC_ALPHA, RL_SRC_ALPHA, RL_ONE_MINUS_SRC_ALPHA, RL_MIN, RL_MIN);
 	//DrawCircleWithDepth((Vector2){32, 32}, 30*0.85f, 60, 0.5f, {0, 0, 0, 0});
 	EndBlendMode();
-	rlDisableDepthTest();
+	//rlDisableDepthTest();
     EndTextureMode();
+
     SetTextureFilter(&sliderOuterBall.texture, TEXTURE_FILTER_BILINEAR);
 	
 	BeginTextureMode(&sliderInnerBall);
@@ -1964,6 +1970,7 @@ void GameManager::loadGameTextures(){
 	DrawCircleWithDepth((Vector2){32, 32}, 30, 60, 0.5f, {0, 0, 0, 255});
 	rlDisableDepthTest();
     EndTextureMode();
+
     SetTextureFilter(&sliderInnerBall.texture, TEXTURE_FILTER_BILINEAR);
 
 
@@ -2516,17 +2523,17 @@ int * GameManager::sliderPreInit(HitObjectData data){
 
     }
     for(size_t i = 0; i < renderPointsSize; i++){
-        if(renderPoints[i].x < -150){
-            renderPoints[i].x = -150;
+        if(renderPoints[i].x < Global.sliderMinimumX){
+            renderPoints[i].x = Global.sliderMinimumX;
         }
-        if(renderPoints[i].y < -150){
-            renderPoints[i].y = -150;
+        if(renderPoints[i].y < Global.sliderMinimumY){
+            renderPoints[i].y = Global.sliderMinimumY;
         }
-        if(renderPoints[i].x > 790){
-            renderPoints[i].x = 790;
+        if(renderPoints[i].x > Global.sliderMaximumX){
+            renderPoints[i].x = Global.sliderMaximumX;
         }
-        if(renderPoints[i].y > 630){
-            renderPoints[i].y = 630;
+        if(renderPoints[i].y > Global.sliderMaximumY){
+            renderPoints[i].y = Global.sliderMaximumY;
         }
     }
 

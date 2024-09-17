@@ -134,7 +134,11 @@ struct Globals {
 
     Globals() = default;
 
-    float sliderTexSize = 0.55f;
+    float sliderTexSize = 0.50f;
+    float sliderMinimumX = 0.0f; // -150
+    float sliderMinimumY = 0.0f; // -150
+    float sliderMaximumX = 640.0f; // 790
+    float sliderMaximumY = 480.0f; // 630
     int circleSector = 16;
     bool legacyRender = true;
 

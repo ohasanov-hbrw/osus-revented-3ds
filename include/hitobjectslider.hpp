@@ -28,6 +28,8 @@ class Slider : public HitObject{
         int lastblack = 0;
         bool readyToDelete = false;
         bool durationNull = false;
+        float texSizeXoffset = 0.0f;
+        float texSizeYoffset = 0.0f;
         Vector2 lastPosition;
            
 
