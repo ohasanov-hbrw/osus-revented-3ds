@@ -27,10 +27,14 @@
 //#include "SDLutils.hpp"
 
 Globals Global;
-LightLock stateLock;
-LightLock accessLock;
-LightLock osuGameLock;
-LightLock wholeRenderLock;
+
+
+MULTITHREAD_MUTEX stateLock;
+MULTITHREAD_MUTEX accessLock;
+MULTITHREAD_MUTEX osuGameLock;
+MULTITHREAD_MUTEX wholeRenderLock;
+
+MULTITHREAD_THREAD renderThread;
 
 u32 __stacksize__= 512 * 1024;
 
@@ -61,52 +65,29 @@ bool dumbsleep = false;
 
 void RenderLoop(void *){
     double last = 0;
-    C3D_Init(0x100000);//C3D_DEFAULT_CMDBUF_SIZE);
-	C2D_Init(C2D_DEFAULT_MAX_OBJECTS);
     
-    std::cout << "WAITING FOR 0.5SECS\n";
-
-    SleepInUs(1*500*1000);
-
-    std::cout << "C2D INIT\n";
+    _gpu_init_render_thread();
     
-    
-    if(Global.useTopScreen){
-        Global.window = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT);
-    }
-    else{
-        Global.window = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
-    } 
-    Global.gpu_currentRenderTarget = Global.window;
-    C2D_Prepare();
-    C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
-    C2D_Flush(); 
-    C2D_SceneBegin(Global.window);
-    C2D_SetTintMode(C2D_TintMult);
-    EndBlendMode();
-    ClearBackground(Global.Background);
-    C2D_Flush();  //test
-    C3D_FrameEnd(0);
-
-    Global.OsusLogo = LoadTexture("sdmc:/3ds/resources/osus.png");
+    Global.OsusLogo = LoadTexture((Global.GamePath + "/resources/osus.png").c_str());
     std::cout << "Loaded logo\n";
+    std::cout << (Global.GamePath + "/resources/osus.png").c_str() << std::endl;
     
     //Global.DefaultFont = LoadFont("sdmc:/3ds/resources/telegrama_render.otf");
-    LoadFontDefault();
+    
     Global.DefaultFont = GetFontDefault();
     
     std::cout << "Loaded font\n";
     
     
 
-    Global.shdrOutline = LoadShader(0, TextFormat("sdmc:/3ds/resources/shaders/glsl%i/outline.fs", 100));
+    Global.shdrOutline = LoadShader(0, TextFormat((Global.GamePath + "/resources/shaders/glsl%i/outline.fs").c_str(), 100));
 
-    Global.shdrTest = LoadShader(TextFormat("sdmc:/3ds/resources/shaders/glsl%i/mcosu.vsh", 330), TextFormat("sdmc:/3ds/resources/shaders/glsl%i/mcosu.fsh", 330));
+    Global.shdrTest = LoadShader(TextFormat((Global.GamePath + "/resources/shaders/glsl%i/mcosu.vsh").c_str(), 330), TextFormat((Global.GamePath + "/resources/shaders/glsl%i/mcosu.fsh").c_str(), 330));
     
 
     //Image cus;
     std::string lastPath = Global.Path;
-	Global.Path = "sdmc:/3ds/resources/default_skin/";
+	Global.Path = Global.GamePath + "/resources/default_skin/";
 	std::vector<std::string> files = ls(".png");
 	std::sort(files.begin(), files.end(), []
     (const std::string& first, const std::string& second){
@@ -123,7 +104,7 @@ void RenderLoop(void *){
 		}
 	}
 	files.clear();
-    Global.Path = "sdmc:/3ds/resources/skin/";
+    Global.Path = Global.GamePath + "/resources/skin/";
     files = ls(".png");
 	std::sort(files.begin(), files.end(), []
     (const std::string& first, const std::string& second){
@@ -161,9 +142,7 @@ void RenderLoop(void *){
         MutexLock(RENDER_BLOCK);
         Global.CurrentState->textureOps();
 
-        C2D_Prepare();
-        C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
-        C2D_SceneBegin(Global.window);
+        _gpu_start_drawing(Global.window);
 
 
         if(Global.NeedForBackgroundClear)
@@ -181,11 +160,10 @@ void RenderLoop(void *){
 
 
         DrawTextEx(&Global.DefaultFont, TextFormat("FPS: %.3f TPS: %.3f",  avgFPS, avgHZ), {(int)ScaleCordX(5), (int)ScaleCordY(5)}, Scale(20.05), Scale(2), GREEN);
-        if(C3D_GetCmdBufUsage() > 0.8f){
-            std::cout << "NEARLY OVERFLOWING THE COMMAND BUFFER, BEWARE: " << C3D_GetCmdBufUsage() * 100.0f << "%\n";
-        }
-        C2D_Flush();  //test
-        C3D_FrameEnd(0);
+        
+        _gpu_check_command_buffer();
+
+        _gpu_end_drawing();
 
         
 
@@ -206,13 +184,7 @@ void RenderLoop(void *){
 
     }
 
-    UnloadTexture(&Global.OsusLogo);
-    UnloadTexture(&Global.cursor);
-    //UnloadFont(&Global.DefaultFont);
-    UnloadFontDefault();
-
-    C2D_Fini();
-	C3D_Fini();
+    _gpu_exit_render_thread();
 	
 }
 
@@ -220,28 +192,17 @@ void RenderLoop(void *){
 
 
 int main(){
+    _os_init_program(VSYNC);
     InitilizeLocks();
-    osSetSpeedupEnable(true);
+
+    std::cout << _os_get_free_linear_ram() << std::endl;    
+    Global.linearSpaceFree = _os_get_free_linear_ram();
     
 
     std::cout << "parsing the settings.ini file...\n";
     parseSettings();
 
-    gfxInitDefault();
-    aptSetSleepAllowed(true);
-    consoleGetDefault()->fg = 23;
     
-    if(Global.useTopScreen){
-        consoleInit(GFX_BOTTOM, NULL);
-    }
-    else{
-        consoleInit(GFX_TOP, NULL);
-    }
-
-    //consoleGetDefault()->flags &= ~CONSOLE_COLOR_BOLD;
-	//consoleGetDefault()->flags |= CONSOLE_COLOR_FAINT;
-    consoleGetDefault()->fg = 23;
-    std::cout << "Loaded gpu\n";
 
     //SDL_SetMainReady();
     Global.CurrentState = std::make_shared<MainMenu>();
@@ -255,8 +216,7 @@ int main(){
     std::cout << "Loaded gamepath\n";
     //SetTraceLogLevel(LOG_WARNING); //LOG_WARNING
     InitAudioDevice();
-    std::cout << linearSpaceFree() << std::endl;    
-    Global.linearSpaceFree = linearSpaceFree();
+    
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     //SetConfigFlags(FLAG_MSAA_4X_HINT);
     SetAudioStreamBufferSizeDefault(128);
@@ -277,19 +237,19 @@ int main(){
     double lastFrame = getTimer();
     
     std::cout << "Starting render loop\n";
-    std::cout << "Free Vram: " << vramSpaceFree() << std::endl;
-	std::cout << "Free M_ALL: " << osGetMemRegionFree(MEMREGION_ALL) << "/" << osGetMemRegionSize(MEMREGION_ALL) << std::endl;
-	std::cout << "Free M_APP: " << osGetMemRegionFree(MEMREGION_APPLICATION) << "/" << osGetMemRegionSize(MEMREGION_APPLICATION) << std::endl;
-	std::cout << "Free M_SYS: " << osGetMemRegionFree(MEMREGION_SYSTEM) << "/" << osGetMemRegionSize(MEMREGION_SYSTEM) << std::endl;
-	std::cout << "Free M_BSE: " << osGetMemRegionFree(MEMREGION_BASE) << "/" << osGetMemRegionSize(MEMREGION_BASE) << std::endl;
-    std::cout << "Free M_LIN: " << linearSpaceFree() << "/" << Global.linearSpaceFree << std::endl;
+    std::cout << "Free Vram: " << _os_get_free_vram() << std::endl;
+	std::cout << "Free M_ALL: " << _os_get_free_ram(MEMREGION_ALL) << "/" << _os_get_size_ram(MEMREGION_ALL) << std::endl;
+	std::cout << "Free M_APP: " << _os_get_free_ram(MEMREGION_APPLICATION) << "/" << _os_get_size_ram(MEMREGION_APPLICATION) << std::endl;
+	std::cout << "Free M_SYS: " << _os_get_free_ram(MEMREGION_SYSTEM) << "/" << _os_get_size_ram(MEMREGION_SYSTEM) << std::endl;
+	std::cout << "Free M_BSE: " << _os_get_free_ram(MEMREGION_BASE) << "/" << _os_get_size_ram(MEMREGION_BASE) << std::endl;
+    std::cout << "Free M_LIN: " << _os_get_free_linear_ram() << "/" << Global.linearSpaceFree << std::endl;
 
-    Thread renderThread;
-    renderThread = threadCreate(RenderLoop, NULL, 1*1024*1024, 0x29, -1, false);
+    
+    renderThread = _multithread_thread_create(RenderLoop);
 
 
     
-    while(!WindowShouldClose() and aptMainLoop()){
+    while(!WindowShouldClose() and _os_should_program_run()){
         double timerXXX = getTimer();
         auto t1 = std::chrono::steady_clock::now();
         //Global.mutex.lock();
@@ -298,8 +258,9 @@ int main(){
         GetScale();
         GetMouse();
         GetKeys();
+        _os_check_fullscreen();
         updateUpDown();
-        if(IsKeyDown(KEY_START)){
+        if(_os_check_end_condition()){
             break;
         }
         Global.FrameTime = getTimer() - Global.LastFrameTime;
@@ -331,6 +292,7 @@ int main(){
     
     std::cout << "exiting...\n";
     MutexLock(RENDER_BLOCK);
+    SleepInMs(500); //make sure that the gpu has done drawing whatever it had in its buffer... if a frame is taking more than half a second we have other problems...
     std::cout << "unloading current situation\n";
     Global.stop = true;
     Global.CurrentState->unload();
@@ -338,14 +300,16 @@ int main(){
     std::cout << "unloaded\n";
     MutexUnlock(RENDER_BLOCK);
 
-    threadJoin(renderThread, U64_MAX);
-    threadFree(renderThread);
+    _multithread_join_thread(&renderThread);
+    _multithread_free_thread(&renderThread);
+    
 
     //Global.CurrentState->unload();
 
     std::cout << "bye bye :3 ~!\n";
     SleepInMs(1000);
 
-    gfxExit();
+    _os_exit_program();
+
     return 0;
 }

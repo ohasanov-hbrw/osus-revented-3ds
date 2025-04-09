@@ -12,25 +12,25 @@
 
 
 void InitilizeLocks(){
-    LightLock_Init(&stateLock);
-    LightLock_Init(&accessLock);
-    LightLock_Init(&osuGameLock);
-    LightLock_Init(&wholeRenderLock);
+    _multithread_mutex_init(&stateLock);
+    _multithread_mutex_init(&accessLock);
+    _multithread_mutex_init(&osuGameLock);
+    _multithread_mutex_init(&wholeRenderLock);
 }
 
 void MutexLock(int i){
     switch(i){
         case SWITCHING_STATE:
-            LightLock_Lock(&stateLock);
+            _multithread_mutex_lock(&stateLock);
             break;
         case ACCESSING_OBJECTS:
-            LightLock_Lock(&accessLock);
+            _multithread_mutex_lock(&accessLock);
             break;
         case OSU_UPDATE:
-            LightLock_Lock(&osuGameLock);
+            _multithread_mutex_lock(&osuGameLock);
             break;
         case RENDER_BLOCK:
-            LightLock_Lock(&wholeRenderLock);
+            _multithread_mutex_lock(&wholeRenderLock);
             break;
         default:
             // code block
@@ -41,16 +41,16 @@ void MutexLock(int i){
 void MutexUnlock(int i){
     switch(i){
         case SWITCHING_STATE:
-            LightLock_Unlock(&stateLock);
+            _multithread_mutex_unlock(&stateLock);
             break;
         case ACCESSING_OBJECTS:
-            LightLock_Unlock(&accessLock);
+            _multithread_mutex_unlock(&accessLock);
             break;
         case OSU_UPDATE:
-            LightLock_Unlock(&osuGameLock);
+            _multithread_mutex_unlock(&osuGameLock);
             break;
         case RENDER_BLOCK:
-            LightLock_Unlock(&wholeRenderLock);
+            _multithread_mutex_unlock(&wholeRenderLock);
             break;
         default:
             // code block
@@ -62,12 +62,12 @@ void MutexUnlock(int i){
 void updateUpDown(){
     //Get the current state of the mouse wheel
     Global.Wheel = 0; //GetMouseWheelMove();
-    if(IsKeyPressed(KEY_DDOWN )){
+    if(IsKeyPressed(Global.DOWN_KEY )){
         //If the down key is pressed, start a timer so that we can simulate a fast mouse wheel movement
         Global.Wheel = -1;
         Global.FrameTimeCounterWheel = -170;
     }
-    if(IsKeyPressed(KEY_DUP )){
+    if(IsKeyPressed(Global.UP_KEY )){
         //The same deal as above but for the up key
         Global.Wheel = 1;
         Global.FrameTimeCounterWheel = -170;
@@ -76,9 +76,9 @@ void updateUpDown(){
     while(Global.FrameTimeCounterWheel > 50.0f){
         //If the keys are still down, trigger a wheel movement every 50 milliseconds
         Global.FrameTimeCounterWheel -= 50.0f;
-        if(IsKeyDown(KEY_DUP ))
+        if(IsKeyDown(Global.UP_KEY ))
             Global.Wheel = 1;
-        if(IsKeyDown(KEY_DDOWN ))
+        if(IsKeyDown(Global.DOWN_KEY ))
             Global.Wheel = -1;
     }
 }
@@ -206,23 +206,7 @@ int Search(std::vector<float> arr, float x,int l,int r) {
         return l;
 }
 
-void DrawTextureCenter(Texture2D *tex, float x, float y, float s, Color color){
-    if(tex->id == 0)
-        return;
-    //DrawTextureEx(tex, ScaleCords(GetRaylibOrigin({x,y,tex.width*s,tex.height*s})), 0, Scale(s), color);
-    C2D_ImageTint c2dTint;
-    //Maybe needs fixing, idk how blend and alpha work
-    c2dTint.corners[0] = {C2D_Color32(color.r, color.g, color.b, color.a), 1.0f};
-    c2dTint.corners[1] = {C2D_Color32(color.r, color.g, color.b, color.a), 1.0f};
-    c2dTint.corners[2] = {C2D_Color32(color.r, color.g, color.b, color.a), 1.0f};
-    c2dTint.corners[3] = {C2D_Color32(color.r, color.g, color.b, color.a), 1.0f};
-    /*if(tex.width == 48){
-        std::cout << tex.subtex.width << tex.subtex.height << std::endl;
-    }*/
-    C2D_Prepare();
-    C2D_DrawImageAt(C2D_Image{&tex->tex, &tex->subtex}, ScaleCordX(x - ((tex->width * s) / 2.0f)), ScaleCordY(y - ((tex->height * s) / 2.0f)), 0.0f, &c2dTint, Scale(s), Scale(s));
-    C2D_Flush();  //test
-}
+
 
 void DrawTextureSlider(Texture2D *tex, float x, float y, Color color, float s){
     //Same thing as the DrawTextureCenter() function above
@@ -249,8 +233,7 @@ void DrawCNumbersCenter(int n, float x, float y, float s, Color color){
     int digits = log10(n) + 1;
     int i = (digits - 1) * 18;
     for(int k = 0; k < digits; k++){
-        DrawTextureCenter(&gm->numbers[nthDigit(n, digits-k-1)], x - (float)i * s + k * 18 * s * 2, y, s*4, color);
-        C2D_Flush(); 
+        DrawTextureCenter(&gm->numbers[nthDigit(n, digits-k-1)], x - (float)i * s + k * 18 * s * 2, y, s, color);
     }
 }
 std::string getSampleSetFromInt(int s){
@@ -326,7 +309,7 @@ void DrawCNumbersLeft(int n, float x, float y, float s, Color color){
     int digits = log10(n) + 1;
     int i = (digits - 1) * 18;
     for(int k = 0; k < digits; k++){
-        DrawTextureCenter(&gm->numbers[nthDigit(n, digits-k-1)], x + k * 18 * s * 2, y, s*4, color);
+        DrawTextureCenter(&gm->numbers[nthDigit(n, digits-k-1)], x + k * 18 * s * 2, y, s, color);
     }
 }
 
@@ -583,70 +566,3 @@ std::vector<std::string> getAudioFilenames(int timingSet, int timingSampleIndex,
 }
 
 
-unsigned char *LoadFileData(const char *fileName, int *dataSize){
-    unsigned char *data = NULL;
-    *dataSize = 0;
-    if (fileName != NULL){
-        FILE *file = fopen(fileName, "rb");
-        if (file != NULL){
-            // WARNING: On binary streams SEEK_END could not be found,
-            // using fseek() and ftell() could not work in some (rare) cases
-            fseek(file, 0, SEEK_END);
-            int size = ftell(file);     // WARNING: ftell() returns 'long int', maximum size returned is INT_MAX (2147483647 bytes)
-            fseek(file, 0, SEEK_SET);
-            if (size > 0){
-                data = (unsigned char *)malloc(size*sizeof(unsigned char));
-                if (data != NULL){
-                    size_t count = fread(data, sizeof(unsigned char), size, file);
-                    if (count > 2147483647){
-                        free(data);
-                        data = NULL;
-                    }
-                    else{
-                        *dataSize = (int)count;
-                    }
-                }
-            }
-            fclose(file);
-        }
-    }
-
-    return data;
-}
-
-
-void UnloadFileData(unsigned char *data){
-    free(data);
-}
-
-bool TextIsEqual(const char *text1, const char *text2){
-    bool result = false;
-
-    if ((text1 != NULL) && (text2 != NULL)){
-        if (strcmp(text1, text2) == 0) result = true;
-    }
-
-    return result;
-}
-
-const char *GetFileExtension(const char *fileName)
-{
-    const char *dot = strrchr(fileName, '.');
-
-    if (!dot || dot == fileName) return NULL;
-
-    return dot;
-}
-
-bool IsFileExtension(const char *fileName, const char *ext){
-    #define MAX_FILE_EXTENSION_LENGTH  16
-
-    bool result = false;
-    const char *fileExt = GetFileExtension(fileName);
-
-    if (fileExt != NULL){
-        if (strcmp(fileExt, ext) == 0) result = true;
-    }
-
-    return result;
-}

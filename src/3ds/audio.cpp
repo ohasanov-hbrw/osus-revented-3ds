@@ -312,6 +312,7 @@ void MusicThread(Music *music){
     ndspChnWaveBufClear(channel);
     music->playing = false;
     music->ended = true;
+    return;
 }
 
 Music LoadMusicStream(const char *filename){

@@ -10,7 +10,7 @@ std::pair<std::string, std::string> parseLine(std::string line, bool hasSpaceBef
 }
 
 void parseSettings(){
-	std::ifstream ifs("sdmc:/3ds/resources/settings.ini");
+	std::ifstream ifs(Global.GamePath + "/resources/settings.ini");
 	std::string line;
 	if (ifs.is_open()){
         std::cout << "opened.\n";

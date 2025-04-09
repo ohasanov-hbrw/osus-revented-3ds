@@ -6,6 +6,7 @@
 #include <iostream>
 #include <ctime>
 #include <chrono>
+#include "platformspesifics.hpp"
 
 #define RAYMATH_IMPLEMENTATION
 # define M_PI 3.14159265358979323846f
@@ -14,10 +15,10 @@
 //}
 
 
-extern LightLock stateLock;
-extern LightLock accessLock;
-extern LightLock osuGameLock;
-extern LightLock wholeRenderLock;
+extern MULTITHREAD_MUTEX stateLock;
+extern MULTITHREAD_MUTEX accessLock;
+extern MULTITHREAD_MUTEX osuGameLock;
+extern MULTITHREAD_MUTEX wholeRenderLock;
 
 
 #define SWITCHING_STATE 0
@@ -60,7 +61,7 @@ Vector2 GetRaylibOrigin(Rectangle);
 Rectangle GetRaylibOriginR(Rectangle);
 
 //Draw a centered and scaled Texture
-void DrawTextureCenter(Texture2D*, float, float, float, Color);
+//void DrawTextureCenter(Texture2D*, float, float, float, Color);
 //Draw centered and scaled combo numbers
 void DrawCNumbersCenter(int, float, float, float, Color);
 //lmao
@@ -132,8 +133,3 @@ float getAngle(Vector2, Vector2);
 
 std::vector<std::string> getAudioFilenames(int , int , int , int , int , int , int , std::string);
 
-unsigned char *LoadFileData(const char *fileName, int *dataSize);
-void UnloadFileData(unsigned char *data);
-bool TextIsEqual(const char *text1, const char *text2);
-const char *GetFileExtension(const char *fileName);
-bool IsFileExtension(const char *fileName, const char *ext);

@@ -10,15 +10,7 @@
 #include <mutex>
 #include <cstdint>
 
-#ifndef THREEDS_BUILD
-    #include "SDL2/SDL.h"
-#endif
-
-#ifdef THREEDS_BUILD
-    #include <3ds.h>
-    #include "SDL/SDL.h"
-    #include "raylibDefinitions.h"
-#endif
+#define DEPTH_MULT -1
 
 
 #define PLATFORM_DESKTOP
@@ -56,6 +48,26 @@ struct TextureSizes{
 };
 
 struct Globals {
+    #ifdef THREEDS_BUILD
+        int AUDIO_SETUP_KEY = KEY_SELECT;
+        int GO_BACK_KEY = KEY_B;
+        int UP_KEY = KEY_DUP;
+        int DOWN_KEY = KEY_DDOWN;
+        int LEFT_KEY = KEY_DLEFT;
+        int RIGHT_KEY = KEY_DRIGHT;
+        int AUTO_KEY = KEY_X;
+    #endif
+    #ifndef THREEDS_BUILD
+        int AUDIO_SETUP_KEY = SDL_SCANCODE_LALT;
+        int GO_BACK_KEY = SDL_SCANCODE_BACKSPACE;
+        int UP_KEY = SDL_SCANCODE_UP;
+        int DOWN_KEY = SDL_SCANCODE_DOWN;
+        int LEFT_KEY = SDL_SCANCODE_LEFT;
+        int RIGHT_KEY = SDL_SCANCODE_RIGHT;
+        int AUTO_KEY = SDL_SCANCODE_LEFT;
+    #endif
+
+
     float Scale = 1.f;
     Vector2 ZeroPoint = {0.f, 0.f};
     Color Background = { 15, 0, 30, 255 };
@@ -106,12 +118,20 @@ struct Globals {
     //bool audioPlaying = false;
     Font DefaultFont;
 
-    std::string Path = "sdmc:/3ds";//std::filesystem::current_path().string();
-    std::string BeatmapLocation = "sdmc:/3ds/beatmaps";
-    std::string GamePath = "sdmc:/3ds";//std::filesystem::current_path().string();
-    std::string selectedPath = "sdmc:/3ds";
-    std::string CurrentLocation = "sdmc:/3ds";
-
+    #ifdef THREEDS_BUILD
+        std::string Path = "sdmc:/3ds";//std::filesystem::current_path().string();
+        std::string BeatmapLocation = "sdmc:/3ds/beatmaps";
+        std::string GamePath = "sdmc:/3ds";//std::filesystem::current_path().string();
+        std::string selectedPath = "sdmc:/3ds";
+        std::string CurrentLocation = "sdmc:/3ds";
+    #endif
+    #ifndef THREEDS_BUILD
+        std::string Path = std::filesystem::current_path().string();
+        std::string BeatmapLocation = std::filesystem::current_path().string() + "/beatmaps";
+        std::string GamePath = std::filesystem::current_path().string();
+        std::string selectedPath = "";
+        std::string CurrentLocation = std::filesystem::current_path().string();
+    #endif
 
     int MouseTrailSize = 150;
 
@@ -149,7 +169,7 @@ struct Globals {
     float sliderMaximumX = 640.0f; // 790
     float sliderMaximumY = 480.0f; // 630
     int circleSector = 16;
-    bool legacyRender = true;
+    bool legacyRender = false;
 
     long long errorSum = 0;
     long long errorLast = 0;
@@ -182,7 +202,7 @@ struct Globals {
     std::mutex mutex;
     std::mutex mutex2;
 
-    LightLock lightlock;
+    MULTITHREAD_MUTEX lightlock;
 
 
     GameSettings settings;
@@ -190,13 +210,13 @@ struct Globals {
     bool useTopScreen = false;
     bool touchScreenTouchEnabled = true;
 
-    touchPosition touch;
-    touchPosition lastTouchPos;
+    INPUT_TOUCHSCREEN touch;
+    INPUT_TOUCHSCREEN lastTouchPos;
 
     bool lastTouch = false;
 
-    C3D_RenderTarget* window;
-    C3D_RenderTarget* gpu_currentRenderTarget;
+    GPU_RENDER_TARGET * window;
+    GPU_RENDER_TARGET * gpu_currentRenderTarget;
     
     u32 ds_kDown = 0;
     u32 ds_kHeld = 0;
@@ -213,6 +233,12 @@ struct Globals {
     std::vector<Sound *> soundAtChannel;
 
     bool stop = false;
+
+    bool polygonalRendering = true;
+
+    
+
+
 };
 
 extern Globals Global;

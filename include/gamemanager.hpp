@@ -51,7 +51,14 @@ class GameManager{
 
 		float windowScale = 2.0f;
         HitSound hitCircleHS;
-		int skip = 10;
+		
+		#ifdef THREEDS_BUILD
+			int skip = 10;
+		#endif
+		#ifndef THREEDS_BUILD
+			int skip = 3;
+		#endif
+
 		bool renderSpinnerCircle = false;
 		bool renderSpinnerMetre = false;
 		bool renderSpinnerBack = false;

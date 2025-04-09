@@ -291,7 +291,7 @@ void MainMenu::update() {
         //Global.CurrentState->init();
         MutexLock(ACCESSING_OBJECTS);
         std::string temp = Global.Path;
-        Global.Path = "sdmc:/3ds/database";
+        Global.Path = Global.GamePath + "/database";
 
         struct dirent *de;
         DIR *dr = opendir(Global.Path.c_str()); 
@@ -367,7 +367,7 @@ void MainMenu::update() {
                         GameAuthor = geym.configMetadata["Artist"];
                     }
 
-                    std::string filename = "sdmc:/3ds/database/" + GameTitle + " {" + GameSetId + "}.db";
+                    std::string filename = Global.GamePath + "/database/" + GameTitle + " {" + GameSetId + "}.db";
                     bool firstLine = !checkIfExists((filename).c_str());
                     FILE * pFile;
                     pFile = fopen((filename).c_str()  ,"a");
@@ -388,12 +388,12 @@ void MainMenu::update() {
             }
         }
 
-        Global.Path = "sdmc:/3ds/database";
+        Global.Path = Global.GamePath + "/database";
 
         std::vector<std::string> files;
         files = ls(".db");
         std::sort(files.begin(), files.end(), strcasecmp2);
-        std::string filename = "sdmc:/3ds/database/mainFolder.db";
+        std::string filename = Global.GamePath + "/database/mainFolder.db";
         FILE * pFile;
         pFile = fopen((filename).c_str()  ,"a");
         if(pFile != NULL){
@@ -438,7 +438,7 @@ void MainMenu::update() {
         return;
     }
 
-    if(IsKeyDown(KEY_SELECT ))
+    if(IsKeyDown(Global.AUDIO_SETUP_KEY))
         volume.update();
     float lastVolume = Global.volume;
     Global.volume = volume.location / 100.0f;
@@ -460,7 +460,7 @@ void MainMenu::render() {
     wip2.render();
     load.render();
     MutexUnlock(ACCESSING_OBJECTS);
-    if(IsKeyDown(KEY_SELECT ))
+    if(IsKeyDown(Global.AUDIO_SETUP_KEY ))
         volume.render();
     //MutexUnlock(SWITCHING_STATE);
     //MutexUnlock(ACCESSING_OBJECTS);
@@ -519,7 +519,7 @@ void Game::init() {
 }
 void Game::update() {
 
-    if(IsKeyDown(KEY_SELECT ))
+    if(IsKeyDown(Global.AUDIO_SETUP_KEY ))
         volume.update();
     float lastVolume = Global.volume;
     Global.volume = volume.location / 100.0f;
@@ -531,7 +531,7 @@ void Game::update() {
     if(initDone == 1){
         //Global.enableMouse = false;
         MutexLock(ACCESSING_OBJECTS);
-        if(IsKeyPressed(KEY_B) || !(!WindowShouldClose() and aptMainLoop())){
+        if(IsKeyPressed(Global.GO_BACK_KEY) || !(!WindowShouldClose() and _os_should_program_run())){
             Global.CurrentState->initDone = 3;
             MutexUnlock(ACCESSING_OBJECTS);
 
@@ -638,7 +638,7 @@ void Game::render() {
         DrawTextEx(&Global.DefaultFont, message.c_str(), {(int)ScaleCordX(320 - message.size() * 7.5f), (int)ScaleCordY(220)}, Scale(20.05), Scale(2), WHITE);
         //Global.mutex.unlock();
     }
-    if(IsKeyDown(KEY_SELECT ))
+    if(IsKeyDown(Global.AUDIO_SETUP_KEY ))
         volume.render();
 }
 void Game::unload(){
@@ -700,8 +700,7 @@ void WIPMenu::init(){
         GetKeys();
         updateMouseTrail();
         updateUpDown();
-        C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
-        C2D_SceneBegin(Global.window);
+        _gpu_start_drawing(Global.window);
         ClearBackground(Global.Background);
         int index = 0;
         float tempangle = angle;
@@ -746,8 +745,7 @@ void WIPMenu::init(){
         DrawRectangle(ScaleCordX(610), ScaleCordY(450), Scale(20), Scale(20), (Color){0, (unsigned char)(255 * (int)Global.Key2P), (unsigned char)(255 * (int)Global.Key2D), 100});
         renderMouse();
         DrawTextEx(&Global.DefaultFont, TextFormat("FPS: %d",  GetFPS()), {(int)ScaleCordX(5), (int)ScaleCordY(5)}, Scale(20.05), Scale(2), GREEN);
-        C2D_Flush();  //test
-        C3D_FrameEnd(0);
+        _gpu_end_drawing();
     }
     applyMouse = true;
 	//SetTextureFilter(menu, TEXTURE_FILTER_BILINEAR );
@@ -882,8 +880,7 @@ void WIPMenu::update(){
                     GetKeys();
                     updateMouseTrail();
                     updateUpDown();
-                    C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
-                    C2D_SceneBegin(Global.window);
+                    _gpu_start_drawing(Global.window);
                     ClearBackground(Global.Background);
                     int index = 0;
                     float tempangle = angle;
@@ -929,8 +926,7 @@ void WIPMenu::update(){
                     DrawRectangle(ScaleCordX(610), ScaleCordY(450), Scale(20), Scale(20), (Color){0, (unsigned char)(255 * (int)Global.Key2P), (unsigned char)(255 * (int)Global.Key2D), 100});
                     renderMouse();
                     DrawTextEx(&Global.DefaultFont, TextFormat("FPS: %d",  GetFPS()), {(int)ScaleCordX(5), (int)ScaleCordY(5)}, Scale(20.05), Scale(2), GREEN);
-                    C2D_Flush();  //test
-                    C3D_FrameEnd(0);
+                    _gpu_end_drawing();
                 }
                 applyMouse = true;
                 init();
@@ -958,8 +954,7 @@ void WIPMenu::update(){
                     GetKeys();
                     updateMouseTrail();
                     updateUpDown();
-                    C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
-                    C2D_SceneBegin(Global.window);
+                    _gpu_start_drawing(Global.window);
                     ClearBackground(Global.Background);
                     int index = 0;
                     float tempangle = angle;
@@ -1004,8 +999,7 @@ void WIPMenu::update(){
                     DrawRectangle(ScaleCordX(610), ScaleCordY(450), Scale(20), Scale(20), (Color){0, (unsigned char)(255 * (int)Global.Key2P), (unsigned char)(255 * (int)Global.Key2D), 100});
                     renderMouse();
                     DrawTextEx(&Global.DefaultFont, TextFormat("FPS: %d",  GetFPS()), {(int)ScaleCordX(5), (int)ScaleCordY(5)}, Scale(20.05), Scale(2), GREEN);
-                    C2D_Flush();  //test
-                    C3D_FrameEnd(0);
+                    _gpu_end_drawing();
                 }
                 applyMouse = true;
                 init();
@@ -1067,7 +1061,7 @@ void WIPMenu::update(){
             animtime = 0.0f;
     }
 
-    if(IsKeyPressed(KEY_B) and CanGoBack){
+    if(IsKeyPressed(Global.GO_BACK_KEY) and CanGoBack){
         Path.pop_back();
         while(Path[Path.size()-1] != '/'){
             Path.pop_back();
@@ -1089,8 +1083,7 @@ void WIPMenu::update(){
             GetKeys();
             updateMouseTrail();
             updateUpDown();
-            C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
-            C2D_SceneBegin(Global.window);
+            _gpu_start_drawing(Global.window);
             ClearBackground(Global.Background);
             int index = 0;
             float tempangle = angle;
@@ -1135,13 +1128,12 @@ void WIPMenu::update(){
             DrawRectangle(ScaleCordX(610), ScaleCordY(450), Scale(20), Scale(20), (Color){0, (unsigned char)(255 * (int)Global.Key2P), (unsigned char)(255 * (int)Global.Key2D), 100});
             renderMouse();
             DrawTextEx(&Global.DefaultFont, TextFormat("FPS: %d",  GetFPS()), {(int)ScaleCordX(5), (int)ScaleCordY(5)}, Scale(20.05), Scale(2), GREEN);
-            C2D_Flush();  //test
-            C3D_FrameEnd(0);
+            _gpu_end_drawing();
         }
         applyMouse = true;
         init();
     }
-    if(IsKeyPressed(KEY_B ) and !CanGoBack){
+    if(IsKeyPressed(Global.GO_BACK_KEY ) and !CanGoBack){
         MutexLock(SWITCHING_STATE);
         Global.CurrentState->unload();
         Global.CurrentState.reset(new MainMenu());

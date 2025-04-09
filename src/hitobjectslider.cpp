@@ -655,7 +655,7 @@ void Slider::update(){
     //DEBUG
 
     
-    bool debugf = IsKeyDown(SDLK_x);
+    bool debugf = IsKeyDown(Global.AUTO_KEY);
     if(debugf){
         inSlider = true;
     }
@@ -676,7 +676,7 @@ void Slider::update(){
 
     if((gm->currentTime*1000.0f - data.time > 0 or !state) and renderPoints.size() > 0){
         int ticksrendered = 0;
-        bool debugf = IsKeyDown(SDLK_x);
+        bool debugf = IsKeyDown(Global.AUTO_KEY);
         for(int i = 0; i < tickPositions.size(); i++){
             if(tickPositions[i] <= (int)time && (int) time > 0){
                 if(tickclicked[i] == -1){
@@ -803,7 +803,7 @@ void Slider::update(){
             }
         }
 
-        bool debugf = IsKeyDown(SDLK_x);
+        bool debugf = IsKeyDown(Global.AUTO_KEY);
         if(is_hit_at_end || debugf){
             std::vector<std::string> sounds = getAudioFilenames(gm->currentTimingSettings.sampleSet, gm->currentTimingSettings.sampleIndex, gm->defaultSampleSet, data.edgeSets[data.edgeSets.size() - 1].first, data.edgeSets[data.edgeSets.size() - 1].second, data.edgeSounds[data.edgeSounds.size() - 1], data.hindex, data.filename);
             //std::cout << gm->currentTimingSettings.sampleSet << "  -  " << gm->currentTimingSettings.sampleIndex << "  -  " << gm->defaultSampleSet << "  -  " << data.edgeSets[data.edgeSets.size() - 1].first << "  -  " << data.edgeSets[data.edgeSets.size() - 1].second << "  -  " << data.edgeSounds[data.edgeSounds.size() - 1] << "  -  " << data.hindex << " - end at " << gm->currentTime*1000.0f << std::endl;
@@ -883,6 +883,7 @@ void Slider::render(){
             texSizeYoffset = std::max(0.0f, (((std::max(maxY-minY, 1.0f)+(float)gm->circlesize)+8)*Global.sliderTexSize) - 255.5f);
             sliderTexture = LoadRenderTexture((int)(((std::max(maxX-minX, 1.0f)+(float)gm->circlesize)+8)*Global.sliderTexSize - texSizeXoffset),
                                           (int)(((std::max(maxY-minY, 1.0f)+(float)gm->circlesize)+8)*Global.sliderTexSize - texSizeYoffset));
+            std::cout << "loadeed legacy texture" << std::endl;
         }
         else
             sliderTexture = LoadRenderTexture((int)(((std::max(maxX-minX, 1.0f)+(float)gm->circlesize)+16)),
@@ -904,8 +905,8 @@ void Slider::render(){
             rlEnableDepthTest(); 
             ClearBackground({0,0,0,0});
             if(legacyRender){
-                //rlEnableDepthMask();
-                //rlClearScreenBuffers();
+                rlEnableDepthMask();
+                rlClearScreenBuffers();
             }
             //EndBlendMode();
             rlDisableDepthTest();
@@ -929,9 +930,9 @@ void Slider::render(){
     int maxDrawAtTime = 10;
     int drawn = 0;
     if(data.textureLoaded and data.textureReady){
-        legacyRender = true;
+        legacyRender = Global.legacyRender;
         if(legacyRender){   
-            bool polygonalRender = false;
+            bool polygonalRender = Global.polygonalRendering;
             if(polygonalRender){
                 if(clampedBigFade <= 0.7f and renderPoints.size() > 0 and last != renderPoints.size() - 1){
                     BeginTextureMode(&sliderTexture);
@@ -945,14 +946,14 @@ void Slider::render(){
                             if(i < renderPoints.size() and renderPoints[i].x > Global.sliderMinimumX and renderPoints[i].x < Global.sliderMaximumX and renderPoints[i].y > Global.sliderMinimumY and renderPoints[i].y < Global.sliderMaximumY){
                                 if(true){
                                     Vector2 centerCoord = {(renderPoints[i].x+4 * Global.sliderTexSize-minX - texSizeXoffset + gm->circlesize/2.0f) * Global.sliderTexSize, (((renderPoints[i].y+4 * Global.sliderTexSize-minY - texSizeYoffset + gm->circlesize/2.0f) * Global.sliderTexSize))};
-                                    DrawCircleWithDepth(centerCoord, ((gm->circlesize/2.0f) * 0.98)  * Global.sliderTexSize, Global.circleSector, 0.2f, {255, 255, 255, 255});
+                                    DrawCircleWithDepth(centerCoord, ((gm->circlesize/2.0f) * 0.98)  * Global.sliderTexSize, Global.circleSector,DEPTH_MULT * 0.9f, {255, 255, 255, 255});
                                     last = std::max(i, 0);
                                     if(last == renderPoints.size() - 1){
                                         last = renderPoints.size();
                                     }
                                     if(i + gm->skip >= renderPoints.size()){
                                         Vector2 centerCoord = {(renderPoints[renderPoints.size()-1].x+4 * Global.sliderTexSize-minX - texSizeXoffset + gm->circlesize/2.0f) * Global.sliderTexSize, (((renderPoints[renderPoints.size()-1].y+4 * Global.sliderTexSize-minY - texSizeYoffset + gm->circlesize/2.0f) * Global.sliderTexSize))};
-                                        DrawCircleWithDepth(centerCoord, ((gm->circlesize/2.0f) * 0.98)  * Global.sliderTexSize, Global.circleSector, 0.2f, {255, 255, 255, 255});
+                                        DrawCircleWithDepth(centerCoord, ((gm->circlesize/2.0f) * 0.98)  * Global.sliderTexSize, Global.circleSector, DEPTH_MULT * 0.5f, {255, 255, 255, 255});
                                     }
                                 }
                             }
@@ -1196,7 +1197,7 @@ void Slider::render(){
         angle = angle * 180 / PI + 180;
     }
     if(repeat && !(clampedBigFade < 0.7f))
-        DrawTextureRotate(&gm->reverseArrow, renderPoints[index].x, renderPoints[index].y, (gm->circlesize/gm->reverseArrow.width)/2.0f, angle, Fade(WHITE, clampedFade));
+        DrawTextureRotate(&gm->reverseArrow, renderPoints[index].x, renderPoints[index].y, (gm->circlesize/128.0f), angle, Fade(WHITE, clampedFade));
     
     index = renderPoints.size()-1;
     topla = -2;
@@ -1214,7 +1215,7 @@ void Slider::render(){
     else
         renderColor =  Fade(Color{255,255,255}, clampedFade);
     if(repeat2 && position > 0 && !(clampedBigFade < 0.7f))
-        DrawTextureRotate(&gm->reverseArrow, renderPoints[index].x, renderPoints[index].y, (gm->circlesize/gm->reverseArrow.width)/2.0f, angle, Fade(WHITE, clampedFade));
+        DrawTextureRotate(&gm->reverseArrow, renderPoints[index].x, renderPoints[index].y, (gm->circlesize/128.0f), angle, Fade(WHITE, clampedFade));
 
     if((gm->currentTime*1000.0f - data.time > 0 or !state) and renderPoints.size() > 0){
         if(calPos == 0){
@@ -1229,7 +1230,7 @@ void Slider::render(){
             angle+=180;
         int ticksrendered = 0;
 
-        bool debugf = IsKeyDown(SDLK_x);
+        bool debugf = IsKeyDown(Global.AUTO_KEY);
 
         for(int i = 0; i < tickPositions.size(); i++){
             if(tickPositions[i] > (int)time && (int) time > 0 && ticksrendered < 10){

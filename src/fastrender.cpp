@@ -22,7 +22,7 @@ void updateMouseTrail(){
 void renderMouse(){
     if(Global.MousePosition.x == 0.0f && Global.MousePosition.y == 0.0f)
         return;
-    DrawTextureCenter(&Global.cursor, Global.MousePosition.x, Global.MousePosition.y , 1.0f, {255,255,255,255});
+    DrawTextureCenter(&Global.cursor, Global.MousePosition.x, Global.MousePosition.y , 0.3f /*1.0f???*/, {255,255,255,255});
     Vector2 LastPosition = {-10,-10};
     for(int i = 0; i <= Global.MouseTrailSize - 1; i++){
         if(MouseTrail[(indexTrail+i) % Global.MouseTrailSize].x != LastPosition.x or MouseTrail[(indexTrail+i) % Global.MouseTrailSize].y != LastPosition.y ){ 

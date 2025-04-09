@@ -59,7 +59,7 @@ CFLAGS	:=	-O2 -w -Wall -mword-relocations -Wno-psabi \
 			-ffunction-sections \
 			$(ARCH)
 
-CFLAGS	+=	$(INCLUDE) -D__3DS__ -D__arm__ -DSUPPORT_FILEFORMAT_PNG -DSUPPORT_FILEFORMAT_BMP -DSUPPORT_FILEFORMAT_JPG -Ivendor/zip/src -Iinclude -Iinclude/3ds -Iinclude/3ds/AudioDecoders -Iinclude/external -I$$DEVKITPRO/portlibs/3ds/include -I$$DEVKITPRO/portlibs/3ds/include/opus -D_REENTRANT
+CFLAGS	+=	$(INCLUDE) -D__3DS__ -D__arm__ -D_DIRENT_HAVE_D_TYPE -DTHREEDS_BUILD -DSUPPORT_FILEFORMAT_PNG -DSUPPORT_FILEFORMAT_BMP -DSUPPORT_FILEFORMAT_JPG -Ivendor/zip/src -Iinclude -Iinclude/3ds -Iinclude/3ds/AudioDecoders -Iinclude/external -I$$DEVKITPRO/portlibs/3ds/include -I$$DEVKITPRO/portlibs/3ds/include/opus -D_REENTRANT
 
 CXXFLAGS	:= $(CFLAGS) -std=c++17
 
@@ -206,11 +206,11 @@ endif
 
 
 
-deps:
-	@echo zip ...
-	@cd vendor/zip && mkdir -p build && cd build && cmake .. -DCMAKE_DISABLE_TESTING=1 && make -j12
+#deps:
+#	@echo zip ...
+#	@cd vendor/zip && mkdir -p build && cd build && cmake .. -DCMAKE_DISABLE_TESTING=1 && make -j12
 all:$(BUILD) $(GFXBUILD) $(DEPSDIR) $(ROMFS_T3XFILES) $(T3XHFILES)
-	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
+	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile3DS
 	@echo amogs ...
 $(BUILD):
 	@mkdir -p $@

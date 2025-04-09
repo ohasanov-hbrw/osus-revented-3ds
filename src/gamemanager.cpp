@@ -48,7 +48,7 @@ void GameManager::update(){
 	//for now the left key on the keyboard plays the map automatically
 	//this is pretty useful when you need to quickly test the timings
 	//since the bot is always pressing in the correct time window
-	if(IsKeyDown(SDLK_x)){
+	if(IsKeyDown(Global.AUTO_KEY)){
 		Global.useAuto = true;
 	}
 	else{
@@ -300,7 +300,7 @@ void GameManager::update(){
 		hitObjectNodeNext = hitObjectNode->next;
 		processed++;
 
-		if(IsKeyPressed(SDLK_x)){
+		if(IsKeyPressed(Global.AUTO_KEY)){
 			Global.AutoMouseStartTime = currentTime*1000.0f;
 			Global.AutoMousePositionStart = {320, 240};
 		}
@@ -456,7 +456,7 @@ void GameManager::update(){
 			Global.Key2P = false;
 		}
 		else{
-			bool debugf = IsKeyDown(SDLK_x);
+			bool debugf = IsKeyDown(Global.AUTO_KEY);
 			if(debugf){
 				if(hitObject->data.point != 3 && currentTime*1000.0f > hitObject->data.time){
 					if (hitObject->data.type != 2){
@@ -800,7 +800,7 @@ void GameManager::run(){
 		}
 		//if(GetMusicTimeLength(&backgroundMusic) - GetMusicTimePlayed(&backgroundMusic) < 0.1f)
 		//	stop = true;
-		if(backgroundMusic.ended){
+		if(_music_check_if_ended(&backgroundMusic)){
 			maxCombo = std::max(maxCombo, clickCombo);
 			StopMusicStream(&backgroundMusic);
 			TimerLast = (double)GetMusicTimeLength(&backgroundMusic) * 1000.0;
@@ -878,12 +878,13 @@ void GameManager::run(){
 		Global.currentOsuTime = IsMusicStreamPlaying(&backgroundMusic) ? Global.CurrentInterpolatedTime : GetMusicTimePlayed(&backgroundMusic);
 
 		currentTime = (double)Time / 1000.0;
-		if(IsMusicStreamPlaying(&backgroundMusic)){
-			//currentTime = (Global.currentOsuTime + Global.offsetTime) / 1000.0;
-			//currentTime = GetMusicTimePlayed(&backgroundMusic);
-			//std::cout << "music playin\n";
-		}
-
+		#ifndef THREEDS_BUILD
+			if(IsMusicStreamPlaying(&backgroundMusic)){
+				//currentTime = (Global.currentOsuTime + Global.offsetTime) / 1000.0;
+				//currentTime = GetMusicTimePlayed(&backgroundMusic);
+				//std::cout << "music playin\n";
+			}
+		#endif
 		//currentTime -= 8/1000.0f;
 		//currentTime *= 2;
 		//std::cout << "update\n";
@@ -931,7 +932,7 @@ void GameManager::loadDefaultSkin(std::string filename){
 	currentComboIndex = 0;
 	std::vector<std::string> files;
 	files.clear();
-	Global.Path = "sdmc:/3ds/resources/default_skin/";
+	Global.Path = Global.GamePath + "/resources/default_skin/";
 	files = ls(".png");
 
 	std::sort(files.begin(), files.end(), []
@@ -1041,7 +1042,7 @@ void GameManager::loadGameSkin(std::string filename){
 
 	std::vector<std::string> files;
 	files.clear();
-	Global.Path = "sdmc:/3ds/resources/skin/";
+	Global.Path = Global.GamePath + "/resources/skin/";
 	files = ls(".png");
 
 	std::sort(files.begin(), files.end(), []
@@ -1769,12 +1770,17 @@ void GameManager::loadGame(std::string filename){
 	Global.Path.pop_back();
 	backgroundMusic = LoadMusicStream((Global.Path + '/' + gameFile.configGeneral["AudioFilename"]).c_str());
 
-	std::cout << "Free Vram: " << vramSpaceFree() << std::endl;
-	std::cout << "Free M_ALL: " << osGetMemRegionFree(MEMREGION_ALL) << "/" << osGetMemRegionSize(MEMREGION_ALL) << std::endl;
-	std::cout << "Free M_APP: " << osGetMemRegionFree(MEMREGION_APPLICATION) << "/" << osGetMemRegionSize(MEMREGION_APPLICATION) << std::endl;
-	std::cout << "Free M_SYS: " << osGetMemRegionFree(MEMREGION_SYSTEM) << "/" << osGetMemRegionSize(MEMREGION_SYSTEM) << std::endl;
-	std::cout << "Free M_BSE: " << osGetMemRegionFree(MEMREGION_BASE) << "/" << osGetMemRegionSize(MEMREGION_BASE) << std::endl;
-	std::cout << "Free M_LIN: " << linearSpaceFree() << "/" << Global.linearSpaceFree << std::endl;
+
+
+	std::cout << "Free Vram: " << _os_get_free_vram() << std::endl;
+	std::cout << "Free M_ALL: " << _os_get_free_ram(MEMREGION_ALL) << "/" << _os_get_size_ram(MEMREGION_ALL) << std::endl;
+	std::cout << "Free M_APP: " << _os_get_free_ram(MEMREGION_APPLICATION) << "/" << _os_get_size_ram(MEMREGION_APPLICATION) << std::endl;
+	std::cout << "Free M_SYS: " << _os_get_free_ram(MEMREGION_SYSTEM) << "/" << _os_get_size_ram(MEMREGION_SYSTEM) << std::endl;
+	std::cout << "Free M_BSE: " << _os_get_free_ram(MEMREGION_BASE) << "/" << _os_get_size_ram(MEMREGION_BASE) << std::endl;
+	std::cout << "Free M_LIN: " << _os_get_free_linear_ram() << "/" << Global.linearSpaceFree << std::endl;
+
+
+
 
 	//SleepInMs(5000);
 
@@ -1928,19 +1934,26 @@ void GameManager::render_combo(){
 }
 
 void GameManager::loadGameTextures(){
-	//Image tempImage = LoadImage("sdmc:/3ds/resources/sliderin.png");
-	//ImageColorReplace(&tempImage, {255,255,255,159}, {255,255,255,0});
-	//sliderin = LoadTextureFromImage(tempImage);
-	//UnloadImage(tempImage);
-	//std::cout << "loaded tempImage to memory done, press select to continue" << std::endl;
-	//Image tempImage2 = GenImageGradientRadial(sliderin.width, sliderin.height, 0.1, {255,0,0,255}, {0,0,0,0});
-	//sliderblank = LoadTexture("sdmc:/3ds/resources/SliderBlank.png");
-	//sliderout = LoadTexture("sdmc:/3ds/resources/SliderBlank.png");
-	//UnloadImage(tempImage2);
-    //sliderout = LoadTexture("sdmc:/3ds/resources/sliderout.png");
-	C2D_Prepare();
-    C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
-    C2D_SceneBegin(Global.window);
+	
+	Image tempImage = LoadImage((Global.GamePath + "/resources/sliderin.png").c_str());
+	ImageColorReplace(&tempImage, {255,255,255,159}, {255,255,255,0});
+	sliderin = LoadTextureFromImage(&tempImage);
+	UnloadImage(&tempImage);
+	std::cout << "loaded tempImage to memory done, press select to continue" << std::endl;
+	Image tempImage2 = GenImageGradientRadial(sliderin.width, sliderin.height, 0.1, {255,0,0,255}, {0,0,0,0});
+	sliderblank = LoadTexture((Global.GamePath + "/resources/SliderBlank.png").c_str());
+	//sliderout = LoadTexture((Global.GamePath + "/resources/SliderBlank.png").c_str());
+	sliderout = LoadTextureFromImage(&tempImage2);
+	UnloadImage(&tempImage2);
+    //sliderout = LoadTexture((Global.GamePath + "/resources/sliderout.png").c_str());
+	
+	//C2D_Prepare();
+    //C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
+    //C2D_SceneBegin(Global.window);
+	
+	_gpu_start_drawing(Global.window);
+
+
 
 	sliderInnerBall = LoadRenderTexture(64, 64);
 	sliderOuterBall = LoadRenderTexture(64, 64);	
@@ -1974,10 +1987,11 @@ void GameManager::loadGameTextures(){
     SetTextureFilter(&sliderInnerBall.texture, TEXTURE_FILTER_BILINEAR);
 
 
-	C2D_Flush();  //test
-    C3D_FrameEnd(0);
+	//C2D_Flush();  //test
+    //C3D_FrameEnd(0);
+	_gpu_end_drawing();
 
-	followPoint = LoadTexture("sdmc:/3ds/resources/followpoint.png");
+	followPoint = LoadTexture((Global.GamePath + "/resources/followpoint.png").c_str());
     loadDefaultSkin(Global.selectedPath); // LOADING THE DEFAULT SKIN USING A SEPERATE FUNCTION
     loadGameSkin(Global.selectedPath); // LOADING THE GAME SKIN USING A SEPERATE FUNCTION
     if(!Global.settings.useDefaultSkin){
@@ -2673,13 +2687,13 @@ void GameManager::loadGameSounds(){
 	}
 
 	//std::cout << "Done with all the mp3 stuff, press select to continue" << std::endl;
-	Global.Path = "sdmc:/3ds/resources/skin/";
+	Global.Path = Global.GamePath + "/resources/skin/";
 	ComboBreak = ls(".wav");
 	for(int i = 0; i < ComboBreak.size(); i++){
 		if(ComboBreak[i][ComboBreak[i].size() - 1] == '/') continue;
 		if(ComboBreak[i].rfind("combobreak", 0) == 0){
 			if(SoundFilesAll.loaded.count("combobreak") == 0 or SoundFilesAll.loaded["combobreak"].value == false){
-				SoundFilesAll.data["combobreak"] = LoadSound(("sdmc:/3ds/resources/skin/" + ComboBreak[i]).c_str());
+				SoundFilesAll.data["combobreak"] = LoadSound((Global.GamePath + "/resources/skin/" + ComboBreak[i]).c_str());
 				SoundFilesAll.loaded["combobreak"].value = IsSoundReady(&SoundFilesAll.data["combobreak"]);
 				if(SoundFilesAll.loaded["combobreak"].value){
 					std::cout << "loaded " << ComboBreak[i] << " from skin" << std::endl;
@@ -2690,7 +2704,7 @@ void GameManager::loadGameSounds(){
 			std::string name = ComboBreak[i].substr(0, ComboBreak[i].length() - 4);
 			while(std::isdigit(name[name.size() - 1])) name.pop_back();
 			if(SoundFilesAll.loaded.count(name) == 0 or SoundFilesAll.loaded[name].value == false){
-				SoundFilesAll.data[name] = LoadSound(("sdmc:/3ds/resources/skin/" + ComboBreak[i]).c_str());
+				SoundFilesAll.data[name] = LoadSound((Global.GamePath + "/resources/skin/" + ComboBreak[i]).c_str());
 				SoundFilesAll.loaded[name].value = IsSoundReady(&SoundFilesAll.data[name]);
 				if(SoundFilesAll.loaded[name].value){
 					std::filesystem::path p{Global.Path + ComboBreak[i]};
@@ -2707,7 +2721,7 @@ void GameManager::loadGameSounds(){
 		if(ComboBreak[i][ComboBreak[i].size() - 1] == '/') continue;
 		if(ComboBreak[i].rfind("combobreak", 0) == 0){
 			if(SoundFilesAll.loaded.count("combobreak") == 0 or SoundFilesAll.loaded["combobreak"].value == false){
-				SoundFilesAll.data["combobreak"] = LoadSound(("sdmc:/3ds/resources/skin/" + ComboBreak[i]).c_str());
+				SoundFilesAll.data["combobreak"] = LoadSound((Global.GamePath + "/resources/skin/" + ComboBreak[i]).c_str());
 				SoundFilesAll.loaded["combobreak"].value = IsSoundReady(&SoundFilesAll.data["combobreak"]);
 				if(SoundFilesAll.loaded["combobreak"].value){
 					std::cout << "loaded " << ComboBreak[i] << " from skin" << std::endl;
@@ -2718,7 +2732,7 @@ void GameManager::loadGameSounds(){
 			std::string name = ComboBreak[i].substr(0, ComboBreak[i].length() - 4);
 			while(std::isdigit(name[name.size() - 1])) name.pop_back();
 			if(SoundFilesAll.loaded.count(name) == 0 or SoundFilesAll.loaded[name].value == false){
-				SoundFilesAll.data[name] = LoadSound(("sdmc:/3ds/resources/skin/" + ComboBreak[i]).c_str());
+				SoundFilesAll.data[name] = LoadSound((Global.GamePath + "/resources/skin/" + ComboBreak[i]).c_str());
 				SoundFilesAll.loaded[name].value = IsSoundReady(&SoundFilesAll.data[name]);
 				if(SoundFilesAll.loaded[name].value){
 					std::cout << "loaded " << name << " from skin" << std::endl;
@@ -2734,7 +2748,7 @@ void GameManager::loadGameSounds(){
 		if(ComboBreak[i][ComboBreak[i].size() - 1] == '/') continue;
 		if(ComboBreak[i].rfind("combobreak", 0) == 0){
 			if(SoundFilesAll.loaded.count("combobreak") == 0 or SoundFilesAll.loaded["combobreak"].value == false){
-				SoundFilesAll.data["combobreak"] = LoadSound(("sdmc:/3ds/resources/skin/" + ComboBreak[i]).c_str());
+				SoundFilesAll.data["combobreak"] = LoadSound((Global.GamePath + "/resources/skin/" + ComboBreak[i]).c_str());
 				SoundFilesAll.loaded["combobreak"].value = IsSoundReady(&SoundFilesAll.data["combobreak"]);
 				if(SoundFilesAll.loaded["combobreak"].value){
 					std::cout << "loaded " << ComboBreak[i] << " from skin" << std::endl;
@@ -2745,7 +2759,7 @@ void GameManager::loadGameSounds(){
 			std::string name = ComboBreak[i].substr(0, ComboBreak[i].length() - 4);
 			while(std::isdigit(name[name.size() - 1])) name.pop_back();
 			if(SoundFilesAll.loaded.count(name) == 0 or SoundFilesAll.loaded[name].value == false){
-				SoundFilesAll.data[name] = LoadSound(("sdmc:/3ds/resources/skin/" + ComboBreak[i]).c_str());
+				SoundFilesAll.data[name] = LoadSound((Global.GamePath + "/resources/skin/" + ComboBreak[i]).c_str());
 				SoundFilesAll.loaded[name].value = IsSoundReady(&SoundFilesAll.data[name]);
 				if(SoundFilesAll.loaded[name].value){
 					std::cout << "loaded " << name << " from skin" << std::endl;
@@ -2757,13 +2771,13 @@ void GameManager::loadGameSounds(){
 	//std::cout << "Done with all the skinmp3 stuff, press select to continue" << std::endl;
 
 
-	Global.Path = "sdmc:/3ds/resources/default_skin/";
+	Global.Path = Global.GamePath + "/resources/default_skin/";
 	ComboBreak = ls(".wav");
 	for(int i = 0; i < ComboBreak.size(); i++){
 		if(ComboBreak[i][ComboBreak[i].size() - 1] == '/') continue;
 		if(ComboBreak[i].rfind("combobreak", 0) == 0){
 			if(SoundFilesAll.loaded.count("combobreak") == 0 or SoundFilesAll.loaded["combobreak"].value == false){
-				SoundFilesAll.data["combobreak"] = LoadSound(("sdmc:/3ds/resources/default_skin/" + ComboBreak[i]).c_str());
+				SoundFilesAll.data["combobreak"] = LoadSound((Global.GamePath + "/resources/default_skin/" + ComboBreak[i]).c_str());
 				SoundFilesAll.loaded["combobreak"].value = IsSoundReady(&SoundFilesAll.data["combobreak"]);
 				if(SoundFilesAll.loaded["combobreak"].value){
 					std::cout << "loaded " << ComboBreak[i] << " from default skin" << std::endl;
@@ -2774,7 +2788,7 @@ void GameManager::loadGameSounds(){
 			std::string name = ComboBreak[i].substr(0, ComboBreak[i].length() - 4);
 			while(std::isdigit(name[name.size() - 1])) name.pop_back();
 			if(SoundFilesAll.loaded.count(name) == 0 or SoundFilesAll.loaded[name].value == false){
-				SoundFilesAll.data[name] = LoadSound(("sdmc:/3ds/resources/default_skin/" + ComboBreak[i]).c_str());
+				SoundFilesAll.data[name] = LoadSound((Global.GamePath + "/resources/default_skin/" + ComboBreak[i]).c_str());
 				SoundFilesAll.loaded[name].value = IsSoundReady(&SoundFilesAll.data[name]);
 				if(SoundFilesAll.loaded[name].value){
 					std::cout << "loaded " << name << " from default skin" << std::endl;
@@ -2788,7 +2802,7 @@ void GameManager::loadGameSounds(){
 		if(ComboBreak[i][ComboBreak[i].size() - 1] == '/') continue;
 		if(ComboBreak[i].rfind("combobreak", 0) == 0){
 			if(SoundFilesAll.loaded.count("combobreak") == 0 or SoundFilesAll.loaded["combobreak"].value == false){
-				SoundFilesAll.data["combobreak"] = LoadSound(("sdmc:/3ds/resources/default_skin/" + ComboBreak[i]).c_str());
+				SoundFilesAll.data["combobreak"] = LoadSound((Global.GamePath + "/resources/default_skin/" + ComboBreak[i]).c_str());
 				SoundFilesAll.loaded["combobreak"].value = IsSoundReady(&SoundFilesAll.data["combobreak"]);
 				if(SoundFilesAll.loaded["combobreak"].value){
 					std::cout << "loaded " << ComboBreak[i] << " from default skin" << std::endl;
@@ -2799,7 +2813,7 @@ void GameManager::loadGameSounds(){
 			std::string name = ComboBreak[i].substr(0, ComboBreak[i].length() - 4);
 			while(std::isdigit(name[name.size() - 1])) name.pop_back();
 			if(SoundFilesAll.loaded.count(name) == 0 or SoundFilesAll.loaded[name].value == false){
-				SoundFilesAll.data[name] = LoadSound(("sdmc:/3ds/resources/default_skin/" + ComboBreak[i]).c_str());
+				SoundFilesAll.data[name] = LoadSound((Global.GamePath + "/resources/default_skin/" + ComboBreak[i]).c_str());
 				SoundFilesAll.loaded[name].value = IsSoundReady(&SoundFilesAll.data[name]);
 				if(SoundFilesAll.loaded[name].value){
 					std::cout << "loaded " << name << " from default skin" << std::endl;
@@ -2813,7 +2827,7 @@ void GameManager::loadGameSounds(){
 		if(ComboBreak[i][ComboBreak[i].size() - 1] == '/') continue;
 		if(ComboBreak[i].rfind("combobreak", 0) == 0){
 			if(SoundFilesAll.loaded.count("combobreak") == 0 or SoundFilesAll.loaded["combobreak"].value == false){
-				SoundFilesAll.data["combobreak"] = LoadSound(("sdmc:/3ds/resources/default_skin/" + ComboBreak[i]).c_str());
+				SoundFilesAll.data["combobreak"] = LoadSound((Global.GamePath + "/resources/default_skin/" + ComboBreak[i]).c_str());
 				SoundFilesAll.loaded["combobreak"].value = IsSoundReady(&SoundFilesAll.data["combobreak"]);
 				if(SoundFilesAll.loaded["combobreak"].value){
 					std::cout << "loaded " << ComboBreak[i] << " from default skin" << std::endl;
@@ -2824,7 +2838,7 @@ void GameManager::loadGameSounds(){
 			std::string name = ComboBreak[i].substr(0, ComboBreak[i].length() - 4);
 			while(std::isdigit(name[name.size() - 1])) name.pop_back();
 			if(SoundFilesAll.loaded.count(name) == 0 or SoundFilesAll.loaded[name].value == false){
-				SoundFilesAll.data[name] = LoadSound(("sdmc:/3ds/resources/default_skin/" + ComboBreak[i]).c_str());
+				SoundFilesAll.data[name] = LoadSound((Global.GamePath + "/resources/default_skin/" + ComboBreak[i]).c_str());
 				SoundFilesAll.loaded[name].value = IsSoundReady(&SoundFilesAll.data[name]);
 				if(SoundFilesAll.loaded[name].value){
 					std::cout << "loaded " << name << " from default skin" << std::endl;
