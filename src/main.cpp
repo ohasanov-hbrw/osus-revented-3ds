@@ -222,13 +222,15 @@ void RenderLoop(void *){
 int main(){
     InitilizeLocks();
     osSetSpeedupEnable(true);
-    gfxInitDefault();
-    aptSetSleepAllowed(true);
-    consoleGetDefault()->fg = 23;
+    
 
     std::cout << "parsing the settings.ini file...\n";
     parseSettings();
 
+    gfxInitDefault();
+    aptSetSleepAllowed(true);
+    consoleGetDefault()->fg = 23;
+    
     if(Global.useTopScreen){
         consoleInit(GFX_BOTTOM, NULL);
     }

@@ -1,5 +1,5 @@
 #pragma once
-
+#include "platformspesifics.hpp"
 #include "raylib.h"
 #include <string.h>
 #include <filesystem>
@@ -7,11 +7,20 @@
 #include "gamemanager.hpp"
 #include <thread>
 #include <functional>
-#include <3ds.h>
-#include "SDL/SDL.h"
 #include <mutex>
 #include <cstdint>
-#include "raylibDefinitions.h"
+
+#ifndef THREEDS_BUILD
+    #include "SDL2/SDL.h"
+#endif
+
+#ifdef THREEDS_BUILD
+    #include <3ds.h>
+    #include "SDL/SDL.h"
+    #include "raylibDefinitions.h"
+#endif
+
+
 #define PLATFORM_DESKTOP
 
 #if defined(PLATFORM_DESKTOP)
