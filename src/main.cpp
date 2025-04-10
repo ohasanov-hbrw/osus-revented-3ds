@@ -133,7 +133,7 @@ void RenderLoop(void *){
 
     int loc = 0;
     int lastFPS = 0;
-    while(!WindowShouldClose() and !Global.stop){
+    while(!Global.stop){ //!WindowShouldClose() and 
         auto t1 = std::chrono::steady_clock::now();
         last = getTimer();
         //rlViewport(0, 0, GetScreenWidth(), GetScreenHeight());
@@ -141,7 +141,15 @@ void RenderLoop(void *){
         //std::cout << "begin\n";
         MutexLock(RENDER_BLOCK);
         Global.CurrentState->textureOps();
-
+        if(Global.stop){
+            _gpu_start_drawing(Global.window);
+            ClearBackground(Global.Background);
+            DrawTextEx(&Global.DefaultFont, TextFormat("bye bye ~ :3"), {(int)ScaleCordX(10), (int)ScaleCordY(10)}, Scale(40.15), Scale(2), WHITE);
+            _gpu_check_command_buffer();
+            _gpu_end_drawing();
+            MutexUnlock(RENDER_BLOCK);
+            break;
+        }
         _gpu_start_drawing(Global.window);
 
 
@@ -164,8 +172,17 @@ void RenderLoop(void *){
         _gpu_check_command_buffer();
 
         _gpu_end_drawing();
-
         
+        #ifndef THREEDS_BUILD
+            if(VSYNC == 0){
+                std::chrono::duration<double, std::milli> sleepTime {std::chrono::steady_clock::now() - t1};
+                unsigned int sleepTimeInt = (unsigned int)(std::max(0.0, (1000.0/Global.FPS) - (sleepTime.count())) * 800.0);
+                if(!dumbsleep)
+                    SleepInUs(sleepTimeInt);
+                while(getTimer() - last < 1000.0/Global.FPS and getTimer() - last >= 0)
+                    continue;
+            }
+        #endif
 
         std::chrono::duration<double, std::milli> elapsed {std::chrono::steady_clock::now() - t1};
         double fps = (1000.0f / (elapsed.count()));
@@ -183,9 +200,10 @@ void RenderLoop(void *){
         avgFPS = avgFPSqueueSUM / (double)(avgFPSq.size());
 
     }
-
+    std::cout << "trying to exit the rendering thread\n";
     _gpu_exit_render_thread();
-	
+    std::cout << "finalized the renderthread! bye bye";
+	return;
 }
 
 
@@ -291,12 +309,30 @@ int main(){
     }
     
     std::cout << "exiting...\n";
-    MutexLock(RENDER_BLOCK);
+    //MutexLock(RENDER_BLOCK);
     SleepInMs(500); //make sure that the gpu has done drawing whatever it had in its buffer... if a frame is taking more than half a second we have other problems...
+    MutexLock(ACCESSING_OBJECTS);
     std::cout << "unloading current situation\n";
-    Global.stop = true;
+    
+    Global.CurrentState->initDone = 3;
+    MutexUnlock(ACCESSING_OBJECTS);
+
+    MutexLock(RENDER_BLOCK);
+    MutexLock(ACCESSING_OBJECTS);
+    MutexUnlock(RENDER_BLOCK);
+
+    MutexLock(SWITCHING_STATE);
+    std::cout << "locked the switching state\n";
     Global.CurrentState->unload();
+    MutexUnlock(ACCESSING_OBJECTS);
+    Global.CurrentState.reset(new PlayMenu());
+    Global.CurrentState->init();
+    MutexUnlock(SWITCHING_STATE);
+    MutexUnlock(ACCESSING_OBJECTS);
+
+    //Global.CurrentState->unload();
     SleepInMs(5);
+    Global.stop = true;
     std::cout << "unloaded\n";
     MutexUnlock(RENDER_BLOCK);
 

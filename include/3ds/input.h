@@ -31,3 +31,5 @@ int GetMouseY();
 bool IsMouseButtonDown(int index);
 bool IsMouseButtonPressed(int index);
 bool IsMouseButtonReleased(int index);
+
+int GetMouseWheelMove();

@@ -1821,6 +1821,7 @@ void GameManager::unloadGame(){
 	//LightLock_Unlock(&Global.lightlock);
 
 	MutexUnlock(ACCESSING_OBJECTS);
+	MutexUnlock(RENDER_BLOCK);
 	std::cout << "unlocking the hold access lock\n";
 	//MutexUnlock(SWITCHING_STATE);
 	while(true){

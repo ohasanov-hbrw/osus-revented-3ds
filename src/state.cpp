@@ -14,6 +14,7 @@
 #include <clocale>
 #include "utils.hpp"
 #include "time_util.hpp"
+#include "settingsParser.hpp"
 
 PlayMenu::PlayMenu() {
     name = TextBox({320,440}, {520,40}, {0,0,0,0}, "BETA VERSION!", WHITE, 20, 50);
@@ -499,7 +500,7 @@ void Game::init() {
     //While loading the game chaos can happen, no problem
     
     MutexUnlock(SWITCHING_STATE);
-    
+    parseSettings();
     Global.gameManager->loadGame(Global.selectedPath);
     MutexLock(ACCESSING_OBJECTS);
     MutexUnlock(ACCESSING_OBJECTS);

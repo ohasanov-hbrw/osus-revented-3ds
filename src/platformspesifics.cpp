@@ -301,7 +301,7 @@ void _os_exit_program(){
             std::cout << tex.subtex.width << tex.subtex.height << std::endl;
         }*/
         C2D_Prepare();
-        C2D_DrawImageAt(C2D_Image{&tex->tex, &tex->subtex}, ScaleCordX(x - ((tex->width * s) / 2.0f)), ScaleCordY(y - ((tex->height * s) / 2.0f)), 0.0f, &c2dTint, Scale(s), Scale(s));
+        C2D_DrawImageAt(C2D_Image{&tex->tex, &tex->subtex}, ScaleCordX(x - ((tex->width * s) / 2.0f)), ScaleCordY(y - ((tex->height * s) / 2.0f)), 0.0f, &c2dTint, Scale(s * tex->baseScale), Scale(s * tex->baseScale));
         C2D_Flush();  //test
     }
 #endif

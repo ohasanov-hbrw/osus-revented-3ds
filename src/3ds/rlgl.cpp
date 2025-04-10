@@ -374,10 +374,11 @@ Texture2D LoadTextureFromImage(Image *image, bool vram){
         //C3D_TexFlush(&texture.tex);
     }
 
-    texture.width = texture.subtex.width;
-    texture.height = texture.subtex.height;
+    texture.width = image->width; //texture.subtex.width;
+    texture.height = image->height; //texture.subtex.height;
     texture.mipmaps = image->mipmaps;
     texture.format = image->format;
+    texture.baseScale = 1;
     //C3D_TexSetFilter(&texture.tex, GPU_LINEAR, GPU_LINEAR);
     C2D_Flush(); 
     return texture;
@@ -469,6 +470,8 @@ Texture2D LoadTexture(const char *fileName){
     std::cout << "RESIZING TO" << (int)(image.height / divider) << " x " << (int)(image.width / divider) << std::endl;
     //std::cout << "resize" << std::endl;
     //SleepInMs(200);
+    int initialW = (int)image.width;
+    int initialH = (int)image.height;
     int resizeW = (int)(image.width / divider);
     int resizeH = (int)(image.height / divider);
     ImageResize(&image, resizeW, resizeH);
@@ -479,6 +482,9 @@ Texture2D LoadTexture(const char *fileName){
         //SleepInMs(200);
         texture = LoadTextureFromImage(&image);
         texture.id = 1;
+        texture.baseScale = divider;
+        texture.width = initialW;
+        texture.height = initialH;
         //std::cout << "unloadim" << std::endl;
         //SleepInMs(200);
         UnloadImage(&image);
@@ -528,10 +534,10 @@ void DrawTexturePro(Texture2D *texture, Rectangle source, Rectangle dest, Vector
 		Tex3DS_SubTexture subTex = texture->subtex;
 		
 
-		int x = source.x;
-		int y = source.y;
-		int endX = source.x + source.width;
-		int endY = source.y + source.height;
+		int x = source.x / texture->baseScale;
+		int y = source.y / texture->baseScale;
+		int endX = (source.x + source.width) / texture->baseScale;
+		int endY = (source.y + source.height) / texture->baseScale;
 
         if (x != endX){
             int deltaX  = endX - x;
@@ -559,8 +565,8 @@ void DrawTexturePro(Texture2D *texture, Rectangle source, Rectangle dest, Vector
 		c2dTint.corners[2] = {C2D_Color32(tint.r, tint.g, tint.b, tint.a), 1.0f};
 		c2dTint.corners[3] = {C2D_Color32(tint.r, tint.g, tint.b, tint.a), 1.0f};
 
-		float scaleX = dest.width / source.width;
-		float scaleY = dest.height / source.height;
+		float scaleX = (dest.width / source.width) * texture->baseScale;
+		float scaleY = (dest.height / source.height) * texture->baseScale;
 
 		//ADD ROTATION :) I CANT BE F*CKIN BOTHERED
         C2D_Prepare();
@@ -964,6 +970,7 @@ void UnloadTexture(Texture2D *texture){
     C2D_Flush();
     //C3D_TexFlush(&texture.tex);
 	texture->id = 0;
+    texture->baseScale = 1;
 }
 
 void ImageBlurGaussian(Image *image, int blurSize) {
@@ -1215,6 +1222,7 @@ RenderTexture2D LoadRenderTexture(int width, int height, bool vram){
         //std::cout << "texinitdone.\n";
 		if(target.texture.id == 0){
             target.id = 0;
+            std::cout << "TEXTURE INIT FAILED, MAYBE RUNNING OUT OF MEMORYY" << "bytes\n";
             return target;
         }
         std::cout << target.texture.tex.size << " bytes for the texture, free: " << vramSpaceFree() << "bytes\n";
@@ -1404,12 +1412,13 @@ void DrawTextureEx(Texture2D *texture, Vector2 position, float rotation, float s
 
     if(rotation == 0.0f){
         C2D_Prepare();
-        C2D_DrawImageAt(image, position.x, position.y, 0.0f, &c2dTint, scale, scale);
+        C2D_DrawImageAt(image, position.x, position.y, 0.0f, &c2dTint, scale * texture->baseScale, scale * texture->baseScale);
+        //std::cout << texture->baseScale << std::endl;
         //if(texture.width != 120)
             //std::cout << "texdraw: " << texture.width << std::endl;
     }
     else{
-        std::cout << "nah bro no rotation in drawex\n";
+        std::cout << "nah bro no rotation in drawex\n"; //maybe use the function in drawtexturepro??? hmmm
     }
     C2D_Flush();  //test
 }
@@ -1428,7 +1437,7 @@ void DrawTextureExDepth(Texture2D *texture, Vector2 position, float depth, float
     c2dTint.corners[3] = {C2D_Color32(tint.r, tint.g, tint.b, tint.a), 1.0f};
 
     C2D_Prepare();
-    C2D_DrawImageAt(image, position.x, position.y, depth, &c2dTint, scale, scale);
+    C2D_DrawImageAt(image, position.x, position.y, depth, &c2dTint, scale * texture->baseScale, scale * texture->baseScale);
     C2D_Flush();  //test
 }
 
@@ -1447,7 +1456,7 @@ void DrawTextureRotate(Texture2D *tex, float x, float y, float s, float r, Color
 
     //DUNNO IF ROTATION IS GIVEN IN RADIANS BUT YEAH! FIRE IN THE HOLE!!
     C2D_Prepare();
-    C2D_DrawImageAtRotated(image, ScaleCordX(x), ScaleCordY(y), 0, DEG2RAD*r, &c2dTint, Scale(s), Scale(s));
+    C2D_DrawImageAtRotated(image, ScaleCordX(x), ScaleCordY(y), 0, DEG2RAD*r, &c2dTint, Scale(s * tex->baseScale), Scale(s * tex->baseScale));
     C2D_Flush();  //test
 }
 

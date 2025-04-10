@@ -56,6 +56,8 @@ struct Globals {
         int LEFT_KEY = KEY_DLEFT;
         int RIGHT_KEY = KEY_DRIGHT;
         int AUTO_KEY = KEY_X;
+        int P1_KEY = KEY_L;
+        int P2_KEY = KEY_R;
     #endif
     #ifndef THREEDS_BUILD
         int AUDIO_SETUP_KEY = SDL_SCANCODE_LALT;
@@ -65,6 +67,8 @@ struct Globals {
         int LEFT_KEY = SDL_SCANCODE_LEFT;
         int RIGHT_KEY = SDL_SCANCODE_RIGHT;
         int AUTO_KEY = SDL_SCANCODE_LEFT;
+        int P1_KEY = SDL_SCANCODE_Z;
+        int P2_KEY = SDL_SCANCODE_X;
     #endif
 
 
@@ -80,7 +84,14 @@ struct Globals {
     //Color Background = {42,22,33,255};
     int skinNumberOverlap = 18;
     double FPS = 4.0f * 100.0f;
-    int TPS = 240;
+    
+    #ifdef THREEDS_BUILD
+        int TPS = 240;
+    #endif
+    #ifndef THREEDS_BUILD
+        int TPS = 1000;
+    #endif
+
     int Width = 400;
     int Height = 240;
     float offset = 45.0f;

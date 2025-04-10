@@ -61,7 +61,7 @@ void MutexUnlock(int i){
 
 void updateUpDown(){
     //Get the current state of the mouse wheel
-    Global.Wheel = 0; //GetMouseWheelMove();
+    Global.Wheel = GetMouseWheelMove();
     if(IsKeyPressed(Global.DOWN_KEY )){
         //If the down key is pressed, start a timer so that we can simulate a fast mouse wheel movement
         Global.Wheel = -1;
@@ -105,27 +105,27 @@ void GetMouse(){
 
 void GetKeys(){
     //Get all of the keys an store this data into some variables
-    if(IsKeyPressed(KEY_L ) or (Global.enableMouse and IsMouseButtonPressed(SDL_BUTTON_LEFT)))
+    if(IsKeyPressed(Global.P1_KEY ) or (Global.enableMouse and IsMouseButtonPressed(SDL_BUTTON_LEFT)))
         Global.Key1P = true;
     else
         Global.Key1P = false;
-    if(IsKeyPressed(KEY_R ) or (Global.enableMouse and IsMouseButtonPressed(SDL_BUTTON_RIGHT)))
+    if(IsKeyPressed(Global.P2_KEY ) or (Global.enableMouse and IsMouseButtonPressed(SDL_BUTTON_RIGHT)))
         Global.Key2P = true;
     else
         Global.Key2P = false;
-    if(IsKeyDown(KEY_L ) or (Global.enableMouse and IsMouseButtonDown(SDL_BUTTON_LEFT)))
+    if(IsKeyDown(Global.P1_KEY ) or (Global.enableMouse and IsMouseButtonDown(SDL_BUTTON_LEFT)))
         Global.Key1D = true;
     else
         Global.Key1D = false;
-    if(IsKeyDown(KEY_R ) or (Global.enableMouse and IsMouseButtonDown(SDL_BUTTON_RIGHT)))
+    if(IsKeyDown(Global.P2_KEY ) or (Global.enableMouse and IsMouseButtonDown(SDL_BUTTON_RIGHT)))
         Global.Key2D = true;
     else
         Global.Key2D = false;
-    if(IsKeyReleased(KEY_L ) or (Global.enableMouse and IsMouseButtonReleased(SDL_BUTTON_LEFT)))
+    if(IsKeyReleased(Global.P1_KEY ) or (Global.enableMouse and IsMouseButtonReleased(SDL_BUTTON_LEFT)))
         Global.Key1R = true;
     else
         Global.Key1R = false;
-    if(IsKeyReleased(KEY_R ) or (Global.enableMouse and IsMouseButtonReleased(SDL_BUTTON_RIGHT)))
+    if(IsKeyReleased(Global.P2_KEY ) or (Global.enableMouse and IsMouseButtonReleased(SDL_BUTTON_RIGHT)))
         Global.Key2R = true;
     else
         Global.Key2R = false;

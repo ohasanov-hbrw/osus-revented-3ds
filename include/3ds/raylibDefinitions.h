@@ -165,6 +165,7 @@ typedef struct Texture {
     int format;             // Data format (PixelFormat type)
     C3D_Tex tex;
     Tex3DS_SubTexture subtex;
+    int baseScale = 1;
 } Texture;
 
 // Texture2D, same as Texture

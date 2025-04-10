@@ -28,6 +28,10 @@ void PollInputEvents(){
     
 }
 
+int GetMouseWheelMove(){
+    return 0;
+}
+
 Vector2 GetMousePosition(){
     if(Global.useTopScreen){
         return (Vector2){(Global.touch.px * 400) / 320, Global.touch.py};
